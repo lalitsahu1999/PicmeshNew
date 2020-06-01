@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "347671510402",
+    "firebase_url": "https://picmesh-6d324.firebaseio.com",
+    "project_id": "picmesh-6d324",
+    "storage_bucket": "picmesh-6d324.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:347671510402:android:437d2dba75b5856c93a39b",
+        "android_client_info": {
+          "package_name": "com.ihsuraa.picmesh"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "347671510402-2am11fsstk5j8ttuoejiill7v0kq7rmm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ihsuraa.picmesh",
+            "certificate_hash": "0a3a664c812dff58f595818ab887fd5e36be203c"
+          }
+        },
+        {
+          "client_id": "347671510402-rbhvqrgo9n76f12lvktg1gvua3nfb20t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBj0g4ibzNP-MhW43zw7Gdx3DhyQpZG6_E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "347671510402-rbhvqrgo9n76f12lvktg1gvua3nfb20t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
