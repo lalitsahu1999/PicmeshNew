@@ -5,9 +5,12 @@
     <string name="skip">SKIP</string>
     <string name="start">GOT IT</string>
 
-    <string name="slide_1_title">Welcome to Javatpoint!</string>
-    <string name="slide_1_desc">Javatpoint is passionate to offer better technical content to the world.</string>
+    <string name="slide_1_title">Welcome to PicMesh</string>
+    <string name="slide_1_desc">Search profiles with images</string>
 
-    <string name="slide_2_title">Android</string>
-    <string name="slide_2_desc">Android is a mobile operating system developed by Google.</string>
+    <string name="slide_2_title">All features in one place</string>
+    <string name="slide_2_desc">A lots of things you can do with single app</string>
+
+    <string name="slide_3_title">What are you waiting for?</string>
+    <string name="slide_3_desc">Connect with peoples of your intrests</string>
 </resources>

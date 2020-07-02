@@ -1,10 +1,10 @@
 package com.ihsuraa.picmesh;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 
 public class PrefManager {
-
     SharedPreferences pref;
     SharedPreferences.Editor editor;
     Context _context;
@@ -15,6 +15,7 @@ public class PrefManager {
     private static final String PREF_NAME = "welcome";
     private static final String IS_FIRST_TIME_LAUNCH = "IsFirstTimeLaunch";
 
+    @SuppressLint("CommitPrefEdits")
     public PrefManager(Context context) {
         this._context = context;
         pref = _context.getSharedPreferences(PREF_NAME, PRIVATE_MODE);
