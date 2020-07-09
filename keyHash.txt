@@ -1,0 +1,5 @@
+
+      
+keytool -exportcert -alias alias -keystore "C:\Users\Lalit Sahu\AndroidStudioProjects\Picmesh\picmeshKey.jks" | "C:\Users\Lalit Sahu\Downloads\Compressed\openssl-0.9.8k_X64\bin\openssl" sha1 -binary | "C:\Users\Lalit Sahu\Downloads\Compressed\openssl-0.9.8k_X64\bin\openssl" base64
+      
+LyIK5kQXUCRBLG+1fbxYJAFs/z4=

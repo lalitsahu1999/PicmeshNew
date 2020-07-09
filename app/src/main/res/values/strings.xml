@@ -1,6 +1,12 @@
 <resources>
     <string name="app_name">Picmesh</string>
 
+    <string name="facebook_app_id">706244383285704</string>
+    <string name="fb_login_protocol_scheme">fb706244383285704</string>
+
+    <string name="twitter_app_id">Jm1Yzdp1RRTu4HPm4oGoUaa4o</string>
+    <string name="twitter_app_secret">MVkRsCYPXRHC7QGxFQUPEjrjEvlLoiScKuRWdTkbn5dc45qJYs</string>
+
     <string name="next">NEXT</string>
     <string name="skip">SKIP</string>
     <string name="start">GOT IT</string>
