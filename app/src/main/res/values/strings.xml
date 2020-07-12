@@ -19,4 +19,8 @@
 
     <string name="slide_3_title">What are you waiting for?</string>
     <string name="slide_3_desc">Connect with peoples of your intrests</string>
+
+    <string name="phone_login_title">Please provide your phone number:</string>
+    <string name="phone_login_button">Get code</string>
+    <string name="phone_login_submit_button">Submit code</string>
 </resources>

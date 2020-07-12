@@ -3,6 +3,7 @@
     <color name="colorPrimary">#6200EE</color>
     <color name="colorPrimaryDark">#3700B3</color>
     <color name="colorAccent">#03DAC5</color>
+    <color name="statusbar">#BD0000</color>
 
     <!-- Screens background color-->
     <color name="bg_screen1">#BB1212</color>
@@ -15,6 +16,8 @@
     <!-- dots active colors -->
     <color name="dot_light_screen1">#8de7f9</color>
     <color name="dot_light_screen2">#8cf9eb</color>
+
+    <color name="progressbar">#F67070</color>
 
     <array name="array_dot_active">
         <item>@color/dot_light_screen1</item>

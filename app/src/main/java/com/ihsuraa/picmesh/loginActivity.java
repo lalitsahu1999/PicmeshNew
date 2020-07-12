@@ -106,7 +106,7 @@ public class loginActivity extends AppCompatActivity {
                             @Override
                             public void onSuccess(LoginResult loginResult) {
                                 // App code
-                                Toast.makeText(getApplicationContext(),"success",Toast.LENGTH_SHORT).show();
+                                //Toast.makeText(getApplicationContext(),"success",Toast.LENGTH_SHORT).show();
                                handleFacebookAccessToken(loginResult.getAccessToken());
                             }
 
@@ -121,14 +121,14 @@ public class loginActivity extends AppCompatActivity {
                             }
                         });
 
-                Toast.makeText(getApplicationContext(),"fb",Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getApplicationContext(),"fb",Toast.LENGTH_SHORT).show();
             }
         });
         card_gmail.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-               Toast.makeText(getApplicationContext(),"gmail",Toast.LENGTH_SHORT).show();
+              // Toast.makeText(getApplicationContext(),"gmail",Toast.LENGTH_SHORT).show();
                 GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                         .requestIdToken(getString(R.string.default_web_client_id))
                         .requestEmail()
@@ -141,7 +141,9 @@ public class loginActivity extends AppCompatActivity {
         card_phone.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(getApplicationContext(),"phone",Toast.LENGTH_SHORT).show();
+               // Toast.makeText(getApplicationContext(),"phone",Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(loginActivity.this, PhoneLogin.class);
+                startActivity(intent);
             }
         });
         card_twit.setOnClickListener(new View.OnClickListener() {
@@ -153,7 +155,7 @@ public class loginActivity extends AppCompatActivity {
 
                     @Override
                     public void success(Result<TwitterSession> twitterSessionResult) {
-                        Toast.makeText(getApplicationContext(),twitterSessionResult.data.getUserName(),Toast.LENGTH_SHORT).show();
+                       // Toast.makeText(getApplicationContext(),twitterSessionResult.data.getUserName(),Toast.LENGTH_SHORT).show();
                         firebaseTwitterLogin(twitterSessionResult.data);
                     }
 

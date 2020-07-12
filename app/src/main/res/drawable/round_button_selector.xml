@@ -2,7 +2,7 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_focused="false"
         android:state_pressed="true"
-        android:drawable="@drawable/hover_fb" />
-    <item android:drawable="@drawable/logo_fb" />
+        android:drawable="@drawable/hover_button" />
+    <item android:drawable="@drawable/normal_round_button" />
 
 </selector>
