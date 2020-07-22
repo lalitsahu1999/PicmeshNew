@@ -23,4 +23,7 @@
     <string name="phone_login_title">Please provide your phone number:</string>
     <string name="phone_login_button">Get code</string>
     <string name="phone_login_submit_button">Submit code</string>
+
+    <string name="set_gender">Gender</string>
+    <string name="gender_confirm">Next</string>
 </resources>

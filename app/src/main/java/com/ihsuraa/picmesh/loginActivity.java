@@ -22,7 +22,9 @@ import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
+import com.facebook.Profile;
 import com.facebook.appevents.AppEventsLogger;
+import com.facebook.internal.ImageRequest;
 import com.facebook.login.Login;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
@@ -47,18 +49,27 @@ import com.google.firebase.auth.TwitterAuthProvider;
 import com.twitter.sdk.android.core.Callback;
 import com.twitter.sdk.android.core.Result;
 import com.twitter.sdk.android.core.Twitter;
+import com.twitter.sdk.android.core.TwitterApiClient;
 import com.twitter.sdk.android.core.TwitterAuthConfig;
 import com.twitter.sdk.android.core.TwitterConfig;
+import com.twitter.sdk.android.core.TwitterCore;
 import com.twitter.sdk.android.core.TwitterException;
 import com.twitter.sdk.android.core.TwitterSession;
 import com.twitter.sdk.android.core.identity.TwitterAuthClient;
+import com.twitter.sdk.android.core.models.User;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
+import de.hdodenhof.circleimageview.CircleImageView;
+import retrofit2.Call;
 
 public class loginActivity extends AppCompatActivity {
 
@@ -66,8 +77,8 @@ public class loginActivity extends AppCompatActivity {
     CardView card_fb, card_gmail ,card_phone , card_twit;
     CallbackManager callbackManager;
     FirebaseAuth  mFirebaseAuth;
-
-    String userEmail;
+    String profileImageUrl = null, fullname = null , userEmail = null;
+    ArrayList<String> info;
     GoogleSignInClient googleSignInClient;
     TwitterAuthClient mTwitterAuthClient;
 
@@ -80,6 +91,8 @@ public class loginActivity extends AppCompatActivity {
         card_gmail =findViewById(R.id.card_gmail);
         card_phone = findViewById(R.id.card_phone);
         card_twit = findViewById(R.id.card_twit);
+        info = new ArrayList<String>();
+        profileImageUrl = fullname = userEmail = null;
         TwitterAuthConfig mTwitterAuthConfig = new TwitterAuthConfig(getString(R.string.twitter_app_id),
                 getString(R.string.twitter_app_secret));
         TwitterConfig twitterConfig = new TwitterConfig.Builder(this)
@@ -104,10 +117,15 @@ public class loginActivity extends AppCompatActivity {
                 LoginManager.getInstance().registerCallback(callbackManager,
                         new FacebookCallback<LoginResult>() {
                             @Override
-                            public void onSuccess(LoginResult loginResult) {
+                            public void onSuccess(final LoginResult loginResult) {
                                 // App code
                                 //Toast.makeText(getApplicationContext(),"success",Toast.LENGTH_SHORT).show();
-                               handleFacebookAccessToken(loginResult.getAccessToken());
+
+                                Profile profile = Profile.getCurrentProfile();
+                                fullname = profile.getName();
+                                profileImageUrl = profile.getProfilePictureUri(500,500).toString();
+
+                                handleFacebookAccessToken(loginResult.getAccessToken());
                             }
 
                             @Override
@@ -155,6 +173,22 @@ public class loginActivity extends AppCompatActivity {
 
                     @Override
                     public void success(Result<TwitterSession> twitterSessionResult) {
+                        TwitterCore.getInstance().getApiClient().getAccountService().verifyCredentials(true, true, true).enqueue(new Callback<User>() {
+                            @Override
+                            public void success(Result<User> result) {
+
+                                fullname = result.data.name;
+                                userEmail = result.data.email;
+                                profileImageUrl = result.data.profileImageUrlHttps.replace("_normal", "");
+                                //Toast.makeText(getApplicationContext(),profileImageUrl,Toast.LENGTH_LONG).show();
+                            }
+
+                            @Override
+                            public void failure(TwitterException exception) {
+
+                            }
+                        });
+
                        // Toast.makeText(getApplicationContext(),twitterSessionResult.data.getUserName(),Toast.LENGTH_SHORT).show();
                         firebaseTwitterLogin(twitterSessionResult.data);
                     }
@@ -180,8 +214,7 @@ public class loginActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
 
                         Toast.makeText(loginActivity.this, "login with twitter sucess", Toast.LENGTH_LONG).show();
-                        Intent intent = new Intent(loginActivity.this, ChooseProfile.class);
-                        startActivity(intent);
+                       upateActivity();
                     }
                 });
     }
@@ -196,7 +229,8 @@ public class loginActivity extends AppCompatActivity {
             try {
                 // Google Sign In was successful, authenticate with Firebase
                 GoogleSignInAccount account = task.getResult(ApiException.class);
-                Log.d("TAG", "firebaseAuthWithGoogle:" + account.getId());
+               fullname = account.getDisplayName();
+               userEmail = account.getEmail();
 
                 firebaseAuthWithGoogle(account.getIdToken());
             } catch (ApiException e) {
@@ -225,8 +259,7 @@ public class loginActivity extends AppCompatActivity {
                             // Sign in success, update UI with the signed-in user's information
                             Log.d("TAG", "signInWithCredential:success");
                             FirebaseUser user = mFirebaseAuth.getCurrentUser();
-                            Intent intent = new Intent(loginActivity.this, ChooseProfile.class);
-                            startActivity(intent);
+                            upateActivity();
                             //updateUI(user);
                         } else {
                             // If sign in fails, display a message to the user.
@@ -254,8 +287,7 @@ public class loginActivity extends AppCompatActivity {
                             Log.d("TAG", "signInWithCredential:success");
                             FirebaseUser user = mFirebaseAuth.getCurrentUser();
                             Log.i("TAG", "onComplete: login completed with user: " + user);
-                            Intent intent = new Intent(loginActivity.this, ChooseProfile.class);
-                            startActivity(intent);
+                           upateActivity();
 
                         } else {
                             // If sign in fails, display a message to the user.
@@ -272,5 +304,14 @@ public class loginActivity extends AppCompatActivity {
     private void signInWithGoogle() {
         Intent signInIntent = googleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
+    }
+
+    private void upateActivity(){
+        Intent intent = new Intent(loginActivity.this, SetName.class);
+        info.add(fullname);
+        info.add(userEmail);
+        info.add(profileImageUrl);
+        intent.putExtra("Info" , info);
+        startActivity(intent);
     }
 }

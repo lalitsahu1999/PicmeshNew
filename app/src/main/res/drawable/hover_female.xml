@@ -1,20 +1,24 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+
     <item>
         <bitmap
-            android:src="@drawable/logo_gmail" />
+            android:src="@drawable/female" />
     </item>
+
+
+    <!-- over bottom shadow -->
     <item>
         <shape android:shape="rectangle" >
-
             <gradient
                 android:angle="90"
-                android:startColor="#653E0606"
+                android:centerColor="#00FF0000"
+                android:centerY="0.9"
+                android:startColor="#65E10D0D"
                 android:type="linear" />
 
-
-            <corners
-                android:radius="0dp"/>
-
+            <corners android:radius="8dp" />
         </shape>
     </item>
+
 </layer-list>

@@ -15,6 +15,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.ArrayList;
+
 public class ChooseProfile extends AppCompatActivity {
 
     Button logout;
@@ -26,6 +28,7 @@ public class ChooseProfile extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_choose_profile);
+
 
         logout = findViewById(R.id.logout);
         global = getIntent();
@@ -51,6 +54,8 @@ public class ChooseProfile extends AppCompatActivity {
             }
         });
     }
+
+
 
     @Override
     protected void onStart() {

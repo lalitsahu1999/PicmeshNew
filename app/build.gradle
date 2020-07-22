@@ -50,4 +50,6 @@ dependencies {
     implementation 'com.google.android.gms:play-services-auth:18.0.0'
     implementation 'com.twitter.sdk.android:twitter:3.1.1'
     implementation 'com.hbb20:ccp:1.7.1'
+    implementation 'com.squareup.picasso:picasso:2.71828'
+    implementation 'de.hdodenhof:circleimageview:3.1.0'
 }

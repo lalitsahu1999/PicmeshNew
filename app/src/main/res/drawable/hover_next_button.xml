@@ -1,0 +1,25 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <item>
+        <shape xmlns:android="http://schemas.android.com/apk/res/android"
+            android:shape="rectangle" android:padding="10dp">
+            <solid android:color="#D30000"/>
+        </shape>
+    </item>
+
+
+    <!-- over bottom shadow -->
+    <item>
+        <shape android:shape="rectangle" >
+            <gradient
+                android:angle="90"
+                android:endColor="#EF75C2"
+                android:centerY="0.9"
+                android:startColor="#EF75C2"
+                android:type="linear" />
+
+        </shape>
+    </item>
+
+</layer-list>
