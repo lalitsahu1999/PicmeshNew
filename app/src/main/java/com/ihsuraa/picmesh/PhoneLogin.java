@@ -3,6 +3,7 @@ package com.ihsuraa.picmesh;
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -59,11 +60,7 @@ public class PhoneLogin extends AppCompatActivity {
         timer =findViewById(R.id.timer);
         horizontalProgressBar = (ProgressBar)findViewById(R.id.progressBar);
         numb.requestFocus();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            getWindow().setStatusBarColor(getResources().getColor(R.color.statusbar, this.getTheme()));
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().setStatusBarColor(getResources().getColor(R.color.statusbar));
-        }
+        setStatusBarColor();
 
         ccp.setOnCountryChangeListener(new CountryCodePicker.OnCountryChangeListener() {
             @Override
@@ -123,6 +120,14 @@ public class PhoneLogin extends AppCompatActivity {
         });
     }
 
+    private void setStatusBarColor() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            getWindow().setStatusBarColor(getResources().getColor(R.color.statusbar, this.getTheme()));
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(getResources().getColor(R.color.statusbar));
+        }
+    }
+
     private void sendVerificationCode(String mobile) {
         PhoneAuthProvider.getInstance().verifyPhoneNumber(
                  mobile,
@@ -135,16 +140,11 @@ public class PhoneLogin extends AppCompatActivity {
     private PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallbacks = new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
         @Override
         public void onVerificationCompleted(PhoneAuthCredential phoneAuthCredential) {
-            //Getting the code sent by SMS
+
             String code = phoneAuthCredential.getSmsCode();
 
-            //sometime the code is not detected automatically
-            //in this case the code will be null
-            //so user has to manually enter the code
             if (code != null) {
                 otp.setText(code);
-                //verifying the code
-                //verifyVerificationCode(code);
             }
         }
 
@@ -185,7 +185,7 @@ public class PhoneLogin extends AppCompatActivity {
 
             public void onTick(long millisUntilFinished) {
                 timer.setText( String.valueOf(millisUntilFinished / 1000) );
-                //here you can have your logic to set text to edittext
+
             }
 
             @SuppressLint("SetTextI18n")
@@ -199,10 +199,8 @@ public class PhoneLogin extends AppCompatActivity {
     }
 
     private void verifyVerificationCode(String otp) {
-        //creating the credential
-        PhoneAuthCredential credential = PhoneAuthProvider.getCredential(mVerificationId, otp);
 
-        //signing the user
+        PhoneAuthCredential credential = PhoneAuthProvider.getCredential(mVerificationId, otp);
         signInWithPhoneAuthCredential(credential);
     }
 
@@ -214,7 +212,9 @@ public class PhoneLogin extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             //verification successful we will start the profile activity
                             horizontalProgressBar.setVisibility(View.INVISIBLE);
-                            Intent intent = new Intent(PhoneLogin.this, ChooseProfile.class);
+                            Intent intent = new Intent(PhoneLogin.this, SetName.class);
+                            SharedPreferences UserDetails = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
+                            UserDetails.edit().putString("contact", yourNumb).apply();
                             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             startActivity(intent);
 

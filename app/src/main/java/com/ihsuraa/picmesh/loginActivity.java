@@ -1,6 +1,7 @@
 package com.ihsuraa.picmesh;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
@@ -81,18 +82,18 @@ public class loginActivity extends AppCompatActivity {
     ArrayList<String> info;
     GoogleSignInClient googleSignInClient;
     TwitterAuthClient mTwitterAuthClient;
+    SharedPreferences UserDetails;
 
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        card_fb = findViewById(R.id.card_fb);
-        card_gmail =findViewById(R.id.card_gmail);
-        card_phone = findViewById(R.id.card_phone);
-        card_twit = findViewById(R.id.card_twit);
+        setIds();
         info = new ArrayList<String>();
         profileImageUrl = fullname = userEmail = null;
+        UserDetails = getApplicationContext().getSharedPreferences("UserDetails", MODE_PRIVATE);
+
         TwitterAuthConfig mTwitterAuthConfig = new TwitterAuthConfig(getString(R.string.twitter_app_id),
                 getString(R.string.twitter_app_secret));
         TwitterConfig twitterConfig = new TwitterConfig.Builder(this)
@@ -103,6 +104,13 @@ public class loginActivity extends AppCompatActivity {
         callbackManager = CallbackManager.Factory.create();
         cardlistener();
 
+    }
+
+    private void setIds() {
+        card_fb = findViewById(R.id.card_fb);
+        card_gmail =findViewById(R.id.card_gmail);
+        card_phone = findViewById(R.id.card_phone);
+        card_twit = findViewById(R.id.card_twit);
     }
 
 
@@ -118,19 +126,17 @@ public class loginActivity extends AppCompatActivity {
                         new FacebookCallback<LoginResult>() {
                             @Override
                             public void onSuccess(final LoginResult loginResult) {
-                                // App code
-                                //Toast.makeText(getApplicationContext(),"success",Toast.LENGTH_SHORT).show();
 
                                 Profile profile = Profile.getCurrentProfile();
                                 fullname = profile.getName();
                                 profileImageUrl = profile.getProfilePictureUri(500,500).toString();
-
-                                handleFacebookAccessToken(loginResult.getAccessToken());
+                                AuthCredential credential = FacebookAuthProvider.getCredential(loginResult.getAccessToken().getToken());
+                                firebaseLogin(credential);
                             }
 
                             @Override
                             public void onCancel() {
-                                // App code
+
                             }
 
                             @Override
@@ -139,14 +145,13 @@ public class loginActivity extends AppCompatActivity {
                             }
                         });
 
-                //Toast.makeText(getApplicationContext(),"fb",Toast.LENGTH_SHORT).show();
+
             }
         });
         card_gmail.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-              // Toast.makeText(getApplicationContext(),"gmail",Toast.LENGTH_SHORT).show();
                 GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                         .requestIdToken(getString(R.string.default_web_client_id))
                         .requestEmail()
@@ -159,7 +164,6 @@ public class loginActivity extends AppCompatActivity {
         card_phone.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-               // Toast.makeText(getApplicationContext(),"phone",Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(loginActivity.this, PhoneLogin.class);
                 startActivity(intent);
             }
@@ -180,7 +184,6 @@ public class loginActivity extends AppCompatActivity {
                                 fullname = result.data.name;
                                 userEmail = result.data.email;
                                 profileImageUrl = result.data.profileImageUrlHttps.replace("_normal", "");
-                                //Toast.makeText(getApplicationContext(),profileImageUrl,Toast.LENGTH_LONG).show();
                             }
 
                             @Override
@@ -189,8 +192,9 @@ public class loginActivity extends AppCompatActivity {
                             }
                         });
 
-                       // Toast.makeText(getApplicationContext(),twitterSessionResult.data.getUserName(),Toast.LENGTH_SHORT).show();
-                        firebaseTwitterLogin(twitterSessionResult.data);
+                        AuthCredential credential = TwitterAuthProvider.getCredential(twitterSessionResult.data.getAuthToken().token,
+                                twitterSessionResult.data.getAuthToken().secret);
+                        firebaseLogin(credential);
                     }
 
                     @Override
@@ -204,21 +208,28 @@ public class loginActivity extends AppCompatActivity {
         });
     }
 
-    private void firebaseTwitterLogin(TwitterSession session) {
-        AuthCredential credential = TwitterAuthProvider.getCredential(session.getAuthToken().token,
-                session.getAuthToken().secret);
 
+
+    private void firebaseLogin( AuthCredential credential){
         mFirebaseAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            FirebaseUser user = mFirebaseAuth.getCurrentUser();
+                            upateActivity();
 
-                        Toast.makeText(loginActivity.this, "login with twitter sucess", Toast.LENGTH_LONG).show();
-                       upateActivity();
+                        } else {
+
+                            Toast.makeText(loginActivity.this, task.getException().getMessage(),
+                                    Toast.LENGTH_SHORT).show();
+
+                        }
+
+
                     }
                 });
     }
-
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -231,8 +242,8 @@ public class loginActivity extends AppCompatActivity {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                fullname = account.getDisplayName();
                userEmail = account.getEmail();
-
-                firebaseAuthWithGoogle(account.getIdToken());
+                AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
+                firebaseLogin(credential);
             } catch (ApiException e) {
                 // Google Sign In failed, update UI appropriately
                 Log.w("TAG", "Google sign in failed", e);
@@ -247,59 +258,6 @@ public class loginActivity extends AppCompatActivity {
         }
     }
 
-    private void firebaseAuthWithGoogle(String idToken) {
-        AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
-        mFirebaseAuth.signInWithCredential(credential)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            Toast.makeText(loginActivity.this, "gmail success",
-                                    Toast.LENGTH_SHORT).show();
-                            // Sign in success, update UI with the signed-in user's information
-                            Log.d("TAG", "signInWithCredential:success");
-                            FirebaseUser user = mFirebaseAuth.getCurrentUser();
-                            upateActivity();
-                            //updateUI(user);
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            Log.w("TAG", "signInWithCredential:failure", task.getException());
-                            Toast.makeText(loginActivity.this, task.getException().getMessage(),
-                                    Toast.LENGTH_SHORT).show();
-                            //updateUI(null);
-                        }
-
-                        // ...
-                    }
-                });
-    }
-
-    private void handleFacebookAccessToken(AccessToken token) {
-        Log.d("TAG", "handleFacebookAccessToken:" + token);
-
-        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
-        mFirebaseAuth.signInWithCredential(credential)
-                .addOnCompleteListener(loginActivity.this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            Log.d("TAG", "signInWithCredential:success");
-                            FirebaseUser user = mFirebaseAuth.getCurrentUser();
-                            Log.i("TAG", "onComplete: login completed with user: " + user);
-                           upateActivity();
-
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            Log.w("TAG", "signInWithCredential:failure", task.getException());
-                            Toast.makeText(loginActivity.this, task.getException().getMessage(),
-                                    Toast.LENGTH_LONG).show();
-                        }
-
-                        // ...
-                    }
-                });
-    }
 
     private void signInWithGoogle() {
         Intent signInIntent = googleSignInClient.getSignInIntent();
@@ -308,10 +266,11 @@ public class loginActivity extends AppCompatActivity {
 
     private void upateActivity(){
         Intent intent = new Intent(loginActivity.this, SetName.class);
-        info.add(fullname);
-        info.add(userEmail);
-        info.add(profileImageUrl);
-        intent.putExtra("Info" , info);
+        SharedPreferences.Editor editor = UserDetails.edit();
+        editor.putString("fullName",fullname);
+        editor.putString("userEmail",userEmail);
+        editor.putString("propicUrl",profileImageUrl);
+        editor.apply();
         startActivity(intent);
     }
 }

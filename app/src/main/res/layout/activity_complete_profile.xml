@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="center"
+    android:background="@drawable/bg_intro1">
+
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/toolbar_complete_profile" />
+
+    <TextView
+        android:id="@+id/textView11"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="@string/complete_profile"
+        android:textAlignment="center"
+        android:textColor="#F6F6F6"
+        android:textSize="30sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.147" />
+
+    <EditText
+        android:id="@+id/username"
+        android:layout_width="250dp"
+        android:layout_height="40dp"
+        android:background="@drawable/transparent_round_edittext"
+        android:drawableStart="@drawable/vector_accont"
+        android:drawablePadding="15dp"
+        android:ems="10"
+        android:hint="@string/username"
+        android:inputType="textPersonName"
+        android:paddingStart="15dp"
+        android:textColor="#FAFAFA"
+        android:textColorHint="#E3DEDE"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.496"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView11"
+        app:layout_constraintVertical_bias="0.067" />
+
+    <Space
+        android:id="@+id/space"
+        android:layout_width="wrap_content"
+        android:layout_height="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/username"
+        app:layout_constraintVertical_bias="0.0" />
+
+
+
+    <RelativeLayout
+        android:id="@+id/relativeLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.496"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/space"
+        app:layout_constraintVertical_bias="0.0">
+
+        <EditText
+            android:id="@+id/birthday"
+            android:layout_width="250dp"
+            android:layout_height="40dp"
+            android:background="@drawable/transparent_round_edittext"
+            android:drawableStart="@drawable/vector_cake"
+            android:drawablePadding="15dp"
+            android:ems="10"
+            android:enabled="false"
+            android:hint="@string/birthday"
+            android:inputType="date"
+            android:maxLength="10"
+            android:paddingStart="15dp"
+            android:textColor="#FAFAFA"
+            android:textColorHint="#E3DEDE" />
+
+        <ImageButton
+            android:id="@+id/select_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignEnd="@id/birthday"
+            android:layout_alignRight="@id/birthday"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginRight="0dp"
+            android:background="@drawable/select_date"
+            android:elevation="5dp" />
+
+
+    </RelativeLayout>
+
+    <Space
+        android:id="@+id/space2"
+        android:layout_width="wrap_content"
+        android:layout_height="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/relativeLayout"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <RelativeLayout
+        android:id="@+id/relativeLayout2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.496"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/space2"
+        app:layout_constraintVertical_bias="0.0">
+
+        <EditText
+            android:id="@+id/location"
+            android:layout_width="250dp"
+            android:layout_height="40dp"
+            android:background="@drawable/transparent_round_edittext"
+            android:drawableStart="@drawable/vector_location"
+            android:drawablePadding="15dp"
+            android:ems="10"
+            android:enabled="false"
+            android:hint="@string/location"
+            android:inputType="date"
+            android:paddingStart="15dp"
+            android:paddingEnd="40dp"
+            android:textColor="#FAFAFA"
+            android:textColorHint="#E3DEDE" />
+
+        <ImageButton
+            android:id="@+id/select_location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignEnd="@id/location"
+            android:layout_alignRight="@id/location"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginRight="0dp"
+            android:background="@drawable/select_location" />
+
+
+    </RelativeLayout>
+
+    <Space
+        android:id="@+id/space3"
+        android:layout_width="wrap_content"
+        android:layout_height="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/relativeLayout2"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <TextView
+        android:id="@+id/textView12"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="--optional--"
+        android:textColor="#E3DEDE"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/space3"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <ImageView
+        android:id="@+id/opt_img2"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="20dp"
+        android:tag="default"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView12"
+        app:layout_constraintVertical_bias="0.034"
+        app:srcCompat="@drawable/select_img" />
+
+    <ImageView
+        android:id="@+id/opt_img3"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginStart="20dp"
+        android:tag="default"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/opt_img2"
+        app:layout_constraintTop_toTopOf="@+id/opt_img2"
+        app:layout_constraintVertical_bias="0.0"
+        app:srcCompat="@drawable/select_img" />
+
+    <ImageView
+        android:id="@+id/opt_img1"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginEnd="20dp"
+        android:tag="default"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/opt_img2"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/opt_img2"
+        app:layout_constraintVertical_bias="0.0"
+        app:srcCompat="@drawable/select_img" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar"
+        app:layout_constraintVertical_bias="0.0">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-8dp"
+            android:indeterminateOnly="true"
+            android:indeterminateTint="#FFFFFF"
+            android:visibility="invisible"
+            tools:visibility="invisible" />
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/rem_img1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/close"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="@+id/opt_img1"
+        app:layout_constraintEnd_toEndOf="@+id/opt_img1"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="@+id/opt_img1"
+        app:layout_constraintTop_toTopOf="@+id/opt_img1"
+        app:layout_constraintVertical_bias="0.0"
+        tools:visibility="invisible" />
+
+    <ImageButton
+        android:id="@+id/rem_img2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/close"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="@+id/opt_img2"
+        app:layout_constraintEnd_toEndOf="@+id/opt_img2"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="@+id/opt_img2"
+        app:layout_constraintTop_toTopOf="@+id/opt_img2"
+        app:layout_constraintVertical_bias="0.0"
+        tools:visibility="invisible" />
+
+    <ImageButton
+        android:id="@+id/rem_img3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/close"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="@+id/opt_img3"
+        app:layout_constraintEnd_toEndOf="@+id/opt_img3"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="@+id/opt_img3"
+        app:layout_constraintTop_toTopOf="@+id/opt_img3"
+        app:layout_constraintVertical_bias="0.0"
+        tools:visibility="invisible" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

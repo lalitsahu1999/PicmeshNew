@@ -28,4 +28,6 @@
         <item>@color/dot_dark_screen1</item>
         <item>@color/dot_dark_screen2</item>
     </array>
+
+    <color name="date_picker_color">#F84545</color>
 </resources>

@@ -26,4 +26,9 @@
 
     <string name="set_gender">Gender</string>
     <string name="gender_confirm">Next</string>
+
+    <string name="complete_profile">Complete your profile:</string>
+    <string name="username">username</string>
+    <string name="birthday">21/03/1999</string>
+    <string name="location">current location</string>
 </resources>
