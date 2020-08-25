@@ -1,8 +1,8 @@
 <component name="libraryTable">
   <library name="Gradle: com.hbb20:ccp:1.7.1@aar">
     <CLASSES>
-      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/f86ae32bfc5e8773bb26efe0d49a8012/jetified-ccp-1.7.1/jars/classes.jar!/" />
-      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/f86ae32bfc5e8773bb26efe0d49a8012/jetified-ccp-1.7.1/res" />
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/7ed1bd099efc7ed60bc5c32680b24f04/jetified-ccp-1.7.1/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/7ed1bd099efc7ed60bc5c32680b24f04/jetified-ccp-1.7.1/res" />
     </CLASSES>
     <JAVADOC>
       <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.hbb20/ccp/1.7.1/2ff4c5c7f4bbde386d0a451bc6706101606d4612/ccp-1.7.1-javadoc.jar!/" />

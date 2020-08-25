@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/Menu_AboutUs"
+        android:icon="@drawable/select_date"
+        android:title="About US"/>
+    <item
+        android:id="@+id/Menu_LogOutMenu"
+        android:icon="@drawable/select_location"
+        android:title="Logout"/>
+</menu>

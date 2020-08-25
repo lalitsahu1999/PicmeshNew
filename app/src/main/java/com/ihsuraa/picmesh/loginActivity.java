@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -47,6 +48,11 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.auth.OAuthProvider;
 import com.google.firebase.auth.TwitterAuthProvider;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.twitter.sdk.android.core.Callback;
 import com.twitter.sdk.android.core.Result;
 import com.twitter.sdk.android.core.Twitter;
@@ -78,11 +84,12 @@ public class loginActivity extends AppCompatActivity {
     CardView card_fb, card_gmail ,card_phone , card_twit;
     CallbackManager callbackManager;
     FirebaseAuth  mFirebaseAuth;
-    String profileImageUrl = null, fullname = null , userEmail = null;
+    String profileImageUrl = null, fullname = null , userEmail = null , userId;
     ArrayList<String> info;
     GoogleSignInClient googleSignInClient;
     TwitterAuthClient mTwitterAuthClient;
     SharedPreferences UserDetails;
+    ProgressBar progressBar;
 
 
     @Override
@@ -111,6 +118,7 @@ public class loginActivity extends AppCompatActivity {
         card_gmail =findViewById(R.id.card_gmail);
         card_phone = findViewById(R.id.card_phone);
         card_twit = findViewById(R.id.card_twit);
+        progressBar = findViewById(R.id.progressBar);
     }
 
 
@@ -120,6 +128,7 @@ public class loginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
+                disableButton();
 
                 LoginManager.getInstance().logInWithReadPermissions(loginActivity.this, Arrays.asList( "email", "public_profile"));
                 LoginManager.getInstance().registerCallback(callbackManager,
@@ -127,6 +136,7 @@ public class loginActivity extends AppCompatActivity {
                             @Override
                             public void onSuccess(final LoginResult loginResult) {
 
+                                progressBar.setVisibility(View.VISIBLE);
                                 Profile profile = Profile.getCurrentProfile();
                                 fullname = profile.getName();
                                 profileImageUrl = profile.getProfilePictureUri(500,500).toString();
@@ -136,12 +146,14 @@ public class loginActivity extends AppCompatActivity {
 
                             @Override
                             public void onCancel() {
+                                enableButton();
 
                             }
 
                             @Override
                             public void onError(FacebookException exception) {
                                 Toast.makeText(getApplicationContext(),exception.getMessage(),Toast.LENGTH_LONG).show();
+                                enableButton();
                             }
                         });
 
@@ -151,6 +163,7 @@ public class loginActivity extends AppCompatActivity {
         card_gmail.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                disableButton();
 
                 GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                         .requestIdToken(getString(R.string.default_web_client_id))
@@ -171,12 +184,14 @@ public class loginActivity extends AppCompatActivity {
         card_twit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                disableButton();
 
                  mTwitterAuthClient = new TwitterAuthClient();
                 mTwitterAuthClient.authorize(loginActivity.this, new Callback<TwitterSession>() {
 
                     @Override
                     public void success(Result<TwitterSession> twitterSessionResult) {
+                        progressBar.setVisibility(View.VISIBLE);
                         TwitterCore.getInstance().getApiClient().getAccountService().verifyCredentials(true, true, true).enqueue(new Callback<User>() {
                             @Override
                             public void success(Result<User> result) {
@@ -189,6 +204,8 @@ public class loginActivity extends AppCompatActivity {
                             @Override
                             public void failure(TwitterException exception) {
 
+
+                                Toast.makeText(getApplicationContext(),exception.getMessage(),Toast.LENGTH_LONG).show();
                             }
                         });
 
@@ -200,6 +217,7 @@ public class loginActivity extends AppCompatActivity {
                     @Override
                     public void failure(TwitterException e) {
                         e.printStackTrace();
+                        enableButton();
                         Toast.makeText(getApplicationContext(),e.getMessage(),Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -217,10 +235,13 @@ public class loginActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
                             FirebaseUser user = mFirebaseAuth.getCurrentUser();
+                            userId = user.getUid();
                             upateActivity();
+
 
                         } else {
 
+                            enableButton();
                             Toast.makeText(loginActivity.this, task.getException().getMessage(),
                                     Toast.LENGTH_SHORT).show();
 
@@ -239,6 +260,7 @@ public class loginActivity extends AppCompatActivity {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 // Google Sign In was successful, authenticate with Firebase
+                progressBar.setVisibility(View.VISIBLE);
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                fullname = account.getDisplayName();
                userEmail = account.getEmail();
@@ -246,6 +268,8 @@ public class loginActivity extends AppCompatActivity {
                 firebaseLogin(credential);
             } catch (ApiException e) {
                 // Google Sign In failed, update UI appropriately
+                progressBar.setVisibility(View.INVISIBLE);
+                enableButton();
                 Log.w("TAG", "Google sign in failed", e);
                 // ...
             }
@@ -265,12 +289,63 @@ public class loginActivity extends AppCompatActivity {
     }
 
     private void upateActivity(){
-        Intent intent = new Intent(loginActivity.this, SetName.class);
+
+        enableButton();
         SharedPreferences.Editor editor = UserDetails.edit();
         editor.putString("fullName",fullname);
         editor.putString("userEmail",userEmail);
         editor.putString("propicUrl",profileImageUrl);
         editor.apply();
-        startActivity(intent);
+        checkForDetails();
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user!=null){
+            userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            checkForDetails();
+        }
+    }
+
+    private void checkForDetails() {
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        ref.child("users").child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (progressBar.getVisibility()==View.VISIBLE){
+                    progressBar.setVisibility(View.INVISIBLE);
+                }
+                if(snapshot.exists()){
+
+                   startActivity(new Intent(loginActivity.this,Home.class));
+
+                }
+                else {
+                    startActivity(new Intent(loginActivity.this,SetName.class));
+
+                }
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+    private void enableButton(){
+        card_twit.setEnabled(true);
+        card_phone.setEnabled(true);
+        card_gmail.setEnabled(true);
+        card_fb.setEnabled(true);
+    }
+    private void disableButton(){
+        card_twit.setEnabled(false);
+        card_phone.setEnabled(false);
+        card_gmail.setEnabled(false);
+        card_fb.setEnabled(false);
     }
 }

@@ -30,4 +30,5 @@
     </array>
 
     <color name="date_picker_color">#F84545</color>
+    <color name="statusbarCamera">#000000</color>
 </resources>

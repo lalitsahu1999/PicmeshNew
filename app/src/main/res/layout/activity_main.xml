@@ -14,7 +14,7 @@
         android:layout_marginTop="176dp"
         android:layout_marginEnd="8dp"
         android:text="This is your MainActivity or Home Page"
-        android:textColor="@android:color/white"
+        android:textColor="@android:color/primary_text_light_nodisable"
         android:textSize="18dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.503"

@@ -232,6 +232,7 @@ public class SetName extends AppCompatActivity {
                     //pick image from gallery
                     Uri selectedImage = data.getData();
 
+                    Toast.makeText(getApplicationContext(),String.valueOf(selectedImage),Toast.LENGTH_LONG).show();
                     //dp.setImageURI(selectedImage);
                     performCrop(selectedImage);
 
