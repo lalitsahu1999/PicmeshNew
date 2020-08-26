@@ -2,6 +2,7 @@ package com.ihsuraa.picmesh;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ActivityOptions;
 import android.content.Context;
 import android.content.Intent;
@@ -25,11 +26,14 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.CamcorderProfile;
 import android.media.Image;
 import android.media.ImageReader;
+import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -48,6 +52,7 @@ import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -69,9 +74,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 public class statusCamera extends AppCompatActivity  {
@@ -80,12 +89,13 @@ public class statusCamera extends AppCompatActivity  {
     public static final String CAMERA_FRONT = "1";
     public static final String CAMERA_BACK = "0";
     private boolean isFlashSupported;
-    private boolean isTorchOn;
+    private boolean isTorchOn,isClicked = true;
     boolean mManualFocusEngaged;
     SurfaceHolder mHolder;
     Paint paint;
-
-
+    public float finger_spacing = 0;
+    public int zoom_level = 1;
+    private MediaRecorder mMediaRecorder;
     //check state oreintation of output image
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
@@ -96,12 +106,14 @@ public class statusCamera extends AppCompatActivity  {
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
 
+    File mCurrentFile;
+
     private String cameraId;
     private String frontCamAvailable = null;
     private CameraDevice cameraDevice;
     private CameraCaptureSession cameraCaptureSessions;
     private CaptureRequest.Builder captureRequestBuilder;
-    private Size imageDimension;
+    private Size imageDimension , videoSize;
     private ImageReader imageReader;
     private int mSensorOrientation;
     private boolean imageCaptured = false;
@@ -110,7 +122,7 @@ public class statusCamera extends AppCompatActivity  {
     SurfaceView surfaceView;
     private File file;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
-    private boolean mFlashSupported;
+    private boolean mFlashSupported,mIsRecordingVideo;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
     CameraManager manager;
@@ -118,6 +130,7 @@ public class statusCamera extends AppCompatActivity  {
     MeteringRectangle focusAreaTouch;
     Canvas canvas;
     ConstraintLayout constraintLayout;
+    ProgressBar videoCaptureProgress;
 
     CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
@@ -159,9 +172,59 @@ public class statusCamera extends AppCompatActivity  {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         cameraId = CAMERA_BACK;
         manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        videoCaptureProgress = (ProgressBar) findViewById(R.id.videoprogress);
 
 
 
+        btnCapture.setOnTouchListener(new View.OnTouchListener() {
+            private long firstTouchTS = 0;
+            @Override
+            public boolean onTouch(View v, final MotionEvent event) {
+                if (event.getAction()==MotionEvent.ACTION_DOWN) {
+                    firstTouchTS = System.currentTimeMillis();
+                    new CountDownTimer(300, 100) {
+
+                        public void onTick(long millisUntilFinished) {
+
+                        }
+
+                        public void onFinish() {
+
+                            if (event.getAction()!=MotionEvent.ACTION_UP){
+                                isClicked = false;
+                                videoCaptureProgress.setVisibility(View.VISIBLE);
+                                startRecordingVideo();
+                            }
+
+
+                        }
+
+                    }.start();
+
+
+
+                } else if(event.getAction()==MotionEvent.ACTION_UP) {
+
+                    if (isClicked){
+                        takePicture();
+                    }
+                    else {
+
+                        videoCaptureProgress.setVisibility(View.INVISIBLE);
+                        Toast.makeText(statusCamera.this, ((System.currentTimeMillis() - this.firstTouchTS) / 1000) + " seconds", Toast.LENGTH_LONG).show();
+                        isClicked =true;
+                        try {
+                            stopRecordingVideo();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+
+                }
+                return true;
+            }
+        });
 
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
@@ -214,85 +277,133 @@ public class statusCamera extends AppCompatActivity  {
             public boolean onTouch(View view, MotionEvent motionEvent) {
 
                 final int actionMasked = motionEvent.getActionMasked();
+                float maxzoom = (characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM))*10;
 
-                if (actionMasked != MotionEvent.ACTION_DOWN) {
-                    return false;
-                }
+                Rect sensorArraySize = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+                int action = motionEvent.getAction();
+                float current_finger_spacing;
 
+                if (motionEvent.getPointerCount() > 1) {
+                    // Multi touch logic
+                    current_finger_spacing = getFingerSpacing(motionEvent);
+                    if(finger_spacing != 0){
+                        if(current_finger_spacing > finger_spacing && maxzoom > zoom_level){
+                            if (zoom_level<40){
+                                zoom_level++;
+                            }
 
-                final Rect sensorArraySize = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
-                final int halfTouchWidth  = 60; //(int)motionEvent.getTouchMajor(); //TODO: this doesn't represent actual touch size in pixel. Values range in [3, 10]...
-                final int halfTouchHeight = 60; //(int)motionEvent.getTouchMinor();
-                //TODO: here I just flip x,y, but this needs to correspond with the sensor orientation (via SENSOR_ORIENTATION)
-                final int y = Math.max((int)motionEvent.getY() - halfTouchHeight, 0);
-                final int x = Math.max((int)motionEvent.getX() - halfTouchWidth ,  0);
-
-                String text = "You click at x = " + x + " and y = " + y ;
-                
-
-                 focusAreaTouch = new MeteringRectangle(x, y,
-                         halfTouchWidth  * 2,
-                        halfTouchHeight * 2,
-                        MeteringRectangle.METERING_WEIGHT_MAX - 1);
-
-                CameraCaptureSession.CaptureCallback captureCallbackHandler = new CameraCaptureSession.CaptureCallback() {
-                    @Override
-                    public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
-                        super.onCaptureCompleted(session, request, result);
-                        mManualFocusEngaged = false;
-
-                        if (request.getTag() == "FOCUS_TAG") {
-                            //the focus trigger is complete -
-                            //resume repeating (preview surface will get frames), clear AF trigger
-                           captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, null);
-                            updatePreview();
-
+                        } else if (current_finger_spacing < finger_spacing && zoom_level > 1){
+                            zoom_level--;
                         }
+                        int minW = (int) (sensorArraySize.width() / maxzoom);
+                        int minH = (int) (sensorArraySize.height() / maxzoom);
+                        int difW = sensorArraySize.width() - minW;
+                        int difH = sensorArraySize.height() - minH;
+                        int cropW = difW /100 *(int)zoom_level;
+                        int cropH = difH /100 *(int)zoom_level;
+                        cropW -= cropW & 3;
+                        cropH -= cropH & 3;
+                        Rect zoom = new Rect(cropW, cropH, sensorArraySize.width() - cropW, sensorArraySize.height() - cropH);
+                        captureRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
+                    }
+                    finger_spacing = current_finger_spacing;
+                    try {
+                        cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
+
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
                     }
 
-                    @Override
-                    public void onCaptureFailed(CameraCaptureSession session, CaptureRequest request, CaptureFailure failure) {
-                        super.onCaptureFailed(session, request, failure);
-                        Log.e("TAG", "Manual AF failure: " + failure);
-                        mManualFocusEngaged = false;
+                } else{
+                    if (action == MotionEvent.ACTION_DOWN) {
+
+                        final int halfTouchWidth  = 60; //(int)motionEvent.getTouchMajor(); //TODO: this doesn't represent actual touch size in pixel. Values range in [3, 10]...
+                        final int halfTouchHeight = 60; //(int)motionEvent.getTouchMinor();
+                        //TODO: here I just flip x,y, but this needs to correspond with the sensor orientation (via SENSOR_ORIENTATION)
+                        final int y = Math.max((int)motionEvent.getY() - halfTouchHeight, 0);
+                        final int x = Math.max((int)motionEvent.getX() - halfTouchWidth ,  0);
+
+                        String text = "You click at x = " + x + " and y = " + y ;
+
+
+                        focusAreaTouch = new MeteringRectangle(x, y,
+                                halfTouchWidth  * 2,
+                                halfTouchHeight * 2,
+                                MeteringRectangle.METERING_WEIGHT_MAX - 1);
+
+
+
+
+                        try {
+                            //first stop the existing repeating request
+                            cameraCaptureSessions.stopRepeating();
+
+                            //cancel any existing AF trigger (repeated touches, etc.)
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
+                            cameraCaptureSessions.capture(captureRequestBuilder.build(), captureCallbackHandler, mBackgroundHandler);
+
+                            if (isMeteringAreaAFSupported()) {
+                                captureRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{focusAreaTouch});
+                            }
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
+                            captureRequestBuilder.setTag("FOCUS_TAG"); //we'll capture this later for resuming the preview
+
+                            //then we ask for a single request (not repeating!)
+                            cameraCaptureSessions.capture(captureRequestBuilder.build(), captureCallbackHandler, mBackgroundHandler);
+                            mManualFocusEngaged = true;
+                            return true;
+
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
+
+
+
+
+                        return true;
                     }
-                };
-
-
-                try {
-                    //first stop the existing repeating request
-                    cameraCaptureSessions.stopRepeating();
-
-                    //cancel any existing AF trigger (repeated touches, etc.)
-                    captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
-                    captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
-                    cameraCaptureSessions.capture(captureRequestBuilder.build(), captureCallbackHandler, mBackgroundHandler);
-
-                    if (isMeteringAreaAFSupported()) {
-                        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{focusAreaTouch});
-                    }
-                    captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-                    captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
-                    captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
-                    captureRequestBuilder.setTag("FOCUS_TAG"); //we'll capture this later for resuming the preview
-
-                    //then we ask for a single request (not repeating!)
-                    cameraCaptureSessions.capture(captureRequestBuilder.build(), captureCallbackHandler, mBackgroundHandler);
-                    mManualFocusEngaged = true;
-                    return true;
-
-                } catch (CameraAccessException e) {
-                    e.printStackTrace();
                 }
 
 
 
-                //Now add a new AF trigger with focus region
+
                 return true;
             }
         });
 
     }
+
+    CameraCaptureSession.CaptureCallback captureCallbackHandler = new CameraCaptureSession.CaptureCallback() {
+        @Override
+        public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+            super.onCaptureCompleted(session, request, result);
+            mManualFocusEngaged = false;
+
+            if (request.getTag() == "FOCUS_TAG") {
+                //the focus trigger is complete -
+                //resume repeating (preview surface will get frames), clear AF trigger
+                captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, null);
+                updatePreview();
+
+            }
+        }
+
+        @Override
+        public void onCaptureFailed(CameraCaptureSession session, CaptureRequest request, CaptureFailure failure) {
+            super.onCaptureFailed(session, request, failure);
+            Log.e("TAG", "Manual AF failure: " + failure);
+            mManualFocusEngaged = false;
+        }
+    };
+
+        private float getFingerSpacing(MotionEvent event) {
+            float x = event.getX(0) - event.getX(1);
+            float y = event.getY(0) - event.getY(1);
+            return (float) Math.sqrt(x * x + y * y);
+        }
 
     private boolean isMeteringAreaAFSupported()  {
         try {
@@ -458,11 +569,115 @@ public class statusCamera extends AppCompatActivity  {
         }
     }
 
+    private void setUpMediaRecorder() throws IOException {
 
+        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
 
+         mCurrentFile = getOutputMediaFile();
+
+        mMediaRecorder.setOutputFile(mCurrentFile.getAbsolutePath());
+        CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_480P);
+        mMediaRecorder.setVideoFrameRate(profile.videoFrameRate);
+        mMediaRecorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
+        mMediaRecorder.setVideoEncodingBitRate(profile.videoBitRate);
+        mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        mMediaRecorder.setAudioEncodingBitRate(profile.audioBitRate);
+        mMediaRecorder.setAudioSamplingRate(profile.audioSampleRate);
+        int rotation = getWindow().getWindowManager().getDefaultDisplay().getRotation();
+        mMediaRecorder.setOrientationHint(ORIENTATIONS.get(rotation));
+        mMediaRecorder.prepare();
+    }
+
+    private File getOutputMediaFile() {
+        // External sdcard file location
+        File mediaStorageDir = new File(Environment.getExternalStorageDirectory(),
+                "Picmesh");
+        // Create storage directory if it does not exist
+        if (!mediaStorageDir.exists()) {
+            if (!mediaStorageDir.mkdirs()) {
+                //Log.d(TAG, "Oops! Failed create "
+                //  + VIDEO_DIRECTORY_NAME + " directory");
+                return null;
+            }
+        }
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
+                Locale.getDefault()).format(new Date());
+        File mediaFile;
+        mediaFile = new File(mediaStorageDir.getPath() + File.separator
+                + "VID_" + timeStamp + ".mp4");
+        return mediaFile;
+    }
+
+    public void startRecordingVideo() {
+
+        try {
+            closePreviewSession();
+            setUpMediaRecorder();
+            SurfaceTexture texture = textureView.getSurfaceTexture();
+            assert texture != null;
+            texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+            List<Surface> surfaces = new ArrayList<>();
+
+            Surface previewSurface = new Surface(texture);
+            surfaces.add(previewSurface);
+            captureRequestBuilder.addTarget(previewSurface);
+            //MediaRecorder setup for surface
+            Surface recorderSurface = mMediaRecorder.getSurface();
+            surfaces.add(recorderSurface);
+            captureRequestBuilder.addTarget(recorderSurface);
+            // Start a capture session
+            cameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession session) {
+                    cameraCaptureSessions = session;
+
+                    updatePreview();
+
+                    mIsRecordingVideo = true;
+                    // Start recording
+                    mMediaRecorder.start();
+                }
+
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+
+                }
+            }, mBackgroundHandler);
+
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closePreviewSession() {
+        if (cameraCaptureSessions != null) {
+            cameraCaptureSessions.close();
+            cameraCaptureSessions = null;
+        }
+    }
+    public void stopRecordingVideo() throws Exception {
+        // UI
+        //mIsRecordingVideo = false;
+        try {
+            cameraCaptureSessions.stopRepeating();
+            cameraCaptureSessions.abortCaptures();
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        // Stop recording
+        mMediaRecorder.stop();
+        mMediaRecorder.reset();
+    }
 
     private void createCameraPreview() {
         try{
+
             SurfaceTexture texture = textureView.getSurfaceTexture();
             assert  texture != null;
             texture.setDefaultBufferSize(imageDimension.getWidth(),imageDimension.getHeight());
@@ -485,7 +700,7 @@ public class statusCamera extends AppCompatActivity  {
                     Toast.makeText(statusCamera.this, "Changed", Toast.LENGTH_SHORT).show();
                 }
             },null);
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException  e) {
             e.printStackTrace();
         }
     }
@@ -498,18 +713,47 @@ public class statusCamera extends AppCompatActivity  {
         try{
             cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(),null,mBackgroundHandler);
             if (imageCaptured){
-                btnFlash.setVisibility(View.INVISIBLE);
-                btnRotate.setVisibility(View.INVISIBLE);
-                btnCapture.setVisibility(View.INVISIBLE);
-                imgGallery.setVisibility(View.INVISIBLE);
-                captureBack.setVisibility(View.INVISIBLE);
+               hideCameraButtons();
             }
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
 
+    private static Size chooseVideoSize(Size[] choices) {
+        for (Size size : choices) {
+            if (1920 == size.getWidth() && 1080 == size.getHeight()) {
+                return size;
+            }
+        }
+        for (Size size : choices) {
+            if (size.getWidth() == size.getHeight() * 4 / 3 && size.getWidth() <= 1080) {
+                return size;
+            }
+        }
+        //Log.e(TAG, "Couldn't find any suitable video size");
+        return choices[choices.length - 1];
+    }
 
+    private static Size chooseOptimalSize(Size[] choices, int width, int height, Size aspectRatio) {
+        // Collect the supported resolutions that are at least as big as the preview Surface
+        List<Size> bigEnough = new ArrayList<>();
+        int w = aspectRatio.getWidth();
+        int h = aspectRatio.getHeight();
+        for (Size option : choices) {
+            if (option.getHeight() == option.getWidth() * h / w &&
+                    option.getWidth() >= width && option.getHeight() >= height) {
+                bigEnough.add(option);
+            }
+        }
+        // Pick the smallest of those, assuming we found any
+        if (bigEnough.size() > 0) {
+            return Collections.min(bigEnough, new testRecorder.CompareSizesByArea());
+        } else {
+            //Log.e(TAG, "Couldn't find any suitable preview size");
+            return choices[0];
+        }
+    }
 
     private void openCamera() {
 
@@ -530,8 +774,12 @@ public class statusCamera extends AppCompatActivity  {
 
 
             assert map != null;
-            imageDimension = map.getOutputSizes(SurfaceTexture.class)[2];
+            videoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder.class));
+
+            imageDimension = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
+                    textureView.getWidth(), textureView.getHeight(), videoSize);
             if (cameraId==CAMERA_FRONT){
+                videoSize = map.getOutputSizes(MediaRecorder.class)[3];
                 imageDimension = map.getOutputSizes(SurfaceTexture.class)[3];
             }
             Toast.makeText(getApplicationContext(),String.valueOf(imageDimension),Toast.LENGTH_SHORT).show();
@@ -544,6 +792,7 @@ public class statusCamera extends AppCompatActivity  {
                 },REQUEST_CAMERA_PERMISSION);
                 return;
             }
+            mMediaRecorder = new MediaRecorder();
             manager.openCamera(cameraId,stateCallback,null);
 
 
@@ -622,17 +871,30 @@ public class statusCamera extends AppCompatActivity  {
     public void onBackPressed() {
 
         if (imageCaptured){
-            btnFlash.setVisibility(View.VISIBLE);
-            btnRotate.setVisibility(View.VISIBLE);
-            btnCapture.setVisibility(View.VISIBLE);
-            imgGallery.setVisibility(View.VISIBLE);
-            captureBack.setVisibility(View.VISIBLE);
+            showCameraButtons();
+
             imageCaptured = false;
             openCamera();
         }
         else {
             super.onBackPressed();
         }
+    }
+
+    private void showCameraButtons() {
+        btnFlash.setVisibility(View.VISIBLE);
+        btnRotate.setVisibility(View.VISIBLE);
+        btnCapture.setVisibility(View.VISIBLE);
+        imgGallery.setVisibility(View.VISIBLE);
+        captureBack.setVisibility(View.VISIBLE);
+    }
+
+    private void hideCameraButtons() {
+        btnFlash.setVisibility(View.INVISIBLE);
+        btnRotate.setVisibility(View.INVISIBLE);
+        btnCapture.setVisibility(View.INVISIBLE);
+        imgGallery.setVisibility(View.INVISIBLE);
+        captureBack.setVisibility(View.INVISIBLE);
     }
 
     private void stopBackgroundThread() {
