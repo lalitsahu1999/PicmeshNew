@@ -26,11 +26,15 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.AudioManager;
 import android.media.CamcorderProfile;
 import android.media.Image;
 import android.media.ImageReader;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
+import android.opengl.EGL14;
+import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -65,6 +69,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.picker.gallery.model.GalleryImage;
+import com.picker.gallery.model.GalleryVideo;
 import com.picker.gallery.model.interactor.GalleryPicker;
 import com.picker.gallery.view.PickerActivity;
 
@@ -78,13 +83,22 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import javax.microedition.khronos.egl.EGL10;
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.egl.EGLDisplay;
+import javax.microedition.khronos.egl.EGLSurface;
+
+
 public class statusCamera extends AppCompatActivity  {
     TextureView textureView;
+
     ImageButton btnCapture, btnRotate , btnFlash , imgGallery;
     public static final String CAMERA_FRONT = "1";
     public static final String CAMERA_BACK = "0";
@@ -96,8 +110,17 @@ public class statusCamera extends AppCompatActivity  {
     public float finger_spacing = 0;
     public int zoom_level = 1;
     private MediaRecorder mMediaRecorder;
+    private MediaPlayer mMediaPlayer;
     //check state oreintation of output image
+    List<Surface> surfaces;
+    private static final SparseIntArray INVERSE_ORIENTATIONS = new SparseIntArray();
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+    static {
+        INVERSE_ORIENTATIONS.append(Surface.ROTATION_0, 270);
+        INVERSE_ORIENTATIONS.append(Surface.ROTATION_90, 180);
+        INVERSE_ORIENTATIONS.append(Surface.ROTATION_180, 90);
+        INVERSE_ORIENTATIONS.append(Surface.ROTATION_270, 0);
+    }
 
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
@@ -116,7 +139,7 @@ public class statusCamera extends AppCompatActivity  {
     private Size imageDimension , videoSize;
     private ImageReader imageReader;
     private int mSensorOrientation;
-    private boolean imageCaptured = false;
+    private boolean imageCaptured = false,videoCaptured = false;
     //save to file
     CardView captureBack;
     SurfaceView surfaceView;
@@ -192,6 +215,8 @@ public class statusCamera extends AppCompatActivity  {
 
                             if (event.getAction()!=MotionEvent.ACTION_UP){
                                 isClicked = false;
+                                videoCaptured = true;
+                                toggleVideoIcons();
                                 videoCaptureProgress.setVisibility(View.VISIBLE);
                                 startRecordingVideo();
                             }
@@ -275,6 +300,9 @@ public class statusCamera extends AppCompatActivity  {
         textureView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
+
+                if (cameraDevice!=null){
+
 
                 final int actionMasked = motionEvent.getActionMasked();
                 float maxzoom = (characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM))*10;
@@ -367,13 +395,28 @@ public class statusCamera extends AppCompatActivity  {
                     }
                 }
 
-
+                }
 
 
                 return true;
             }
         });
 
+
+
+    }
+
+    private void toggleVideoIcons() {
+        if (videoCaptured){
+            btnRotate.setVisibility(View.INVISIBLE);
+            btnFlash.setVisibility(View.INVISIBLE);
+            imgGallery.setVisibility(View.INVISIBLE);
+        }
+        else {
+            btnRotate.setVisibility(View.VISIBLE);
+            btnFlash.setVisibility(View.VISIBLE);
+            imgGallery.setVisibility(View.VISIBLE);
+        }
     }
 
     CameraCaptureSession.CaptureCallback captureCallbackHandler = new CameraCaptureSession.CaptureCallback() {
@@ -475,6 +518,7 @@ public class statusCamera extends AppCompatActivity  {
 
 
     protected void takePicture() {
+            btnCapture.setEnabled(false);
         if(null == cameraDevice) {
             Log.e("TAG", "cameraDevice is null");
             return;
@@ -587,7 +631,13 @@ public class statusCamera extends AppCompatActivity  {
         mMediaRecorder.setAudioEncodingBitRate(profile.audioBitRate);
         mMediaRecorder.setAudioSamplingRate(profile.audioSampleRate);
         int rotation = getWindow().getWindowManager().getDefaultDisplay().getRotation();
-        mMediaRecorder.setOrientationHint(ORIENTATIONS.get(rotation));
+        if (cameraId.equals(CAMERA_FRONT)) {
+            mMediaRecorder.setOrientationHint(INVERSE_ORIENTATIONS.get(rotation));
+        }
+        else {
+            mMediaRecorder.setOrientationHint(ORIENTATIONS.get(rotation));
+        }
+
         mMediaRecorder.prepare();
     }
 
@@ -620,7 +670,7 @@ public class statusCamera extends AppCompatActivity  {
             assert texture != null;
             texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
-            List<Surface> surfaces = new ArrayList<>();
+             surfaces = new ArrayList<>();
 
             Surface previewSurface = new Surface(texture);
             surfaces.add(previewSurface);
@@ -628,6 +678,7 @@ public class statusCamera extends AppCompatActivity  {
             //MediaRecorder setup for surface
             Surface recorderSurface = mMediaRecorder.getSurface();
             surfaces.add(recorderSurface);
+
             captureRequestBuilder.addTarget(recorderSurface);
             // Start a capture session
             cameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
@@ -667,12 +718,86 @@ public class statusCamera extends AppCompatActivity  {
         try {
             cameraCaptureSessions.stopRepeating();
             cameraCaptureSessions.abortCaptures();
+            //cameraCaptureSessions.close();
+
+            //closePreviewSession();
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
         // Stop recording
+
         mMediaRecorder.stop();
         mMediaRecorder.reset();
+        if (mCurrentFile!=null){
+            hideCameraButtons();
+
+
+            closeCameraDevice();
+
+            startVideoPreview();
+        }
+    }
+
+    void closeCameraDevice() {
+        if (cameraDevice != null) {
+            cameraDevice.close();
+            cameraDevice = null;
+        }
+    }
+
+
+    private void startVideoPreview() {
+
+       //
+       // textureView.setSurfaceTextureListener(new S);
+        try {
+        SurfaceTexture texture =  textureView.getSurfaceTexture();
+        assert  texture != null;
+
+
+        Surface surface = new Surface(texture);
+
+
+        //ArrayList<GalleryVideo> image = new GalleryPicker(getApplicationContext()).getVideos();
+
+            mMediaPlayer= new MediaPlayer();
+            mMediaPlayer.setDataSource(mCurrentFile.getAbsolutePath());
+            mMediaPlayer.setSurface(surface);
+            mMediaPlayer.prepare();
+            mMediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+                @Override
+                public void onBufferingUpdate(MediaPlayer mp, int percent) {
+
+                }
+            });
+
+            mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    mp.start();
+
+                }
+            });
+            mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mp) {
+
+                }
+            });
+            mMediaPlayer.setOnVideoSizeChangedListener(new MediaPlayer.OnVideoSizeChangedListener() {
+                @Override
+                public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
+
+                }
+            });
+            mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mMediaPlayer.start();
+
+        } catch (IllegalArgumentException | IllegalStateException | IOException | SecurityException e) {
+            // TODO Auto-generated catch block
+            Toast.makeText(getApplicationContext(),e.getLocalizedMessage(),Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+        }
     }
 
     private void createCameraPreview() {
@@ -714,6 +839,7 @@ public class statusCamera extends AppCompatActivity  {
             cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(),null,mBackgroundHandler);
             if (imageCaptured){
                hideCameraButtons();
+               btnCapture.setEnabled(true);
             }
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -748,10 +874,19 @@ public class statusCamera extends AppCompatActivity  {
         }
         // Pick the smallest of those, assuming we found any
         if (bigEnough.size() > 0) {
-            return Collections.min(bigEnough, new testRecorder.CompareSizesByArea());
+            return Collections.min(bigEnough, new CompareSizesByArea());
         } else {
             //Log.e(TAG, "Couldn't find any suitable preview size");
             return choices[0];
+        }
+    }
+
+    static class CompareSizesByArea implements Comparator<Size> {
+        @Override
+        public int compare(Size lhs, Size rhs) {
+
+            return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
+                    (long) rhs.getWidth() * rhs.getHeight());
         }
     }
 
@@ -870,16 +1005,23 @@ public class statusCamera extends AppCompatActivity  {
     @Override
     public void onBackPressed() {
 
-        if (imageCaptured){
+        if (imageCaptured || videoCaptured){
             showCameraButtons();
 
+            videoCaptured = false;
             imageCaptured = false;
+            if (mMediaPlayer.isPlaying()){
+                mMediaPlayer.stop();
+                mMediaPlayer.release();
+            }
             openCamera();
+
         }
         else {
             super.onBackPressed();
         }
     }
+
 
     private void showCameraButtons() {
         btnFlash.setVisibility(View.VISIBLE);

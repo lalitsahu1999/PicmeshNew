@@ -4,6 +4,7 @@
       <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/6d05693e8e21094c04e65d5b855f43ef/jetified-ucrop-2.2.5/annotations.zip!/" />
     </ANNOTATIONS>
     <CLASSES>
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/6d05693e8e21094c04e65d5b855f43ef/jetified-ucrop-2.2.5/AndroidManifest.xml" />
       <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/6d05693e8e21094c04e65d5b855f43ef/jetified-ucrop-2.2.5/jars/classes.jar!/" />
       <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/6d05693e8e21094c04e65d5b855f43ef/jetified-ucrop-2.2.5/res" />
     </CLASSES>
