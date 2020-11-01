@@ -3,6 +3,7 @@ package com.ihsuraa.picmesh;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
 import android.media.ThumbnailUtils;
@@ -94,7 +95,11 @@ public class VideoChooserAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
         @Override
         public void onClick(View view) {
-            Toast.makeText(context,mData.get(getAdapterPosition()).getDATA(),Toast.LENGTH_LONG).show();
+            Intent intent=new Intent();
+            intent.putExtra("uri",mData.get(getAdapterPosition()).getDATA());
+            ((Activity) context).setResult(21, intent);
+            ((Activity) context).finish();
+            //Toast.makeText(context,mData.get(getAdapterPosition()).getDATA(),Toast.LENGTH_LONG).show();
         }
     }
 
@@ -112,7 +117,11 @@ public class VideoChooserAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
         @Override
         public void onClick(View v) {
-            Toast.makeText(context,mData.get(getAdapterPosition()).getDATA(),Toast.LENGTH_LONG).show();
+            Intent intent=new Intent();
+            intent.putExtra("uri",mData.get(getAdapterPosition()).getDATA());
+            ((Activity) context).setResult(21, intent);
+            ((Activity) context).finish();
+            //Toast.makeText(context,mData.get(getAdapterPosition()).getDATA(),Toast.LENGTH_LONG).show();
         }
     }
 

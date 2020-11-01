@@ -1,5 +1,6 @@
 package com.ihsuraa.picmesh;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.transition.Slide;
 import android.view.Gravity;
@@ -54,7 +55,8 @@ public class CustomPicker extends AppCompatActivity  {
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
+        Intent intent = new Intent(CustomPicker.this,statusCamera.class);
+        startActivity(intent);
     }
 
     private void setIds() {

@@ -4,14 +4,20 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityOptions;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.Drawable;
@@ -53,11 +59,16 @@ import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -68,6 +79,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.divyanshu.colorseekbar.ColorSeekBar;
 import com.picker.gallery.model.GalleryImage;
 import com.picker.gallery.model.GalleryVideo;
 import com.picker.gallery.model.interactor.GalleryPicker;
@@ -99,7 +111,9 @@ import javax.microedition.khronos.egl.EGLSurface;
 public class statusCamera extends AppCompatActivity  {
     TextureView textureView;
 
-    ImageButton btnCapture, btnRotate , btnFlash , imgGallery;
+    ImageButton btnCapture, btnRotate , btnFlash , imgGallery ;
+    ToggleButton btnBrush;
+    FrameLayout frameLayout , drawLayout;
     public static final String CAMERA_FRONT = "1";
     public static final String CAMERA_BACK = "0";
     private boolean isFlashSupported;
@@ -139,13 +153,13 @@ public class statusCamera extends AppCompatActivity  {
     private Size imageDimension , videoSize;
     private ImageReader imageReader;
     private int mSensorOrientation;
-    private boolean imageCaptured = false,videoCaptured = false;
+    private boolean imageCaptured = false,videoCaptured = false , drawView = false;
     //save to file
     CardView captureBack;
     SurfaceView surfaceView;
     private File file;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
-    private boolean mFlashSupported,mIsRecordingVideo;
+    private boolean mFlashSupported,mIsRecordingVideo ,isGalIntent = false;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
     CameraManager manager;
@@ -154,6 +168,12 @@ public class statusCamera extends AppCompatActivity  {
     Canvas canvas;
     ConstraintLayout constraintLayout;
     ProgressBar videoCaptureProgress;
+TextView undoDrawing;
+    DrawingView dv ;
+    Bitmap myBitmap , selectedBitmap;
+    private Paint mPaint;
+    ColorSeekBar colorSeekBar;
+    SeekBar seekBar;
 
     CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
@@ -192,10 +212,16 @@ public class statusCamera extends AppCompatActivity  {
         btnRotate = (ImageButton) findViewById(R.id.rotate_camera);
         btnFlash = (ImageButton) findViewById(R.id.flash);
         imgGallery = (ImageButton) findViewById(R.id.imgGallery);
+        btnBrush = (ToggleButton) findViewById(R.id.brush);
+        frameLayout = (FrameLayout) findViewById(R.id.frame);
+        colorSeekBar = (ColorSeekBar) findViewById(R.id.color_seek_bar) ;
+        seekBar = (SeekBar) findViewById(R.id.seekBar_luminosite);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         cameraId = CAMERA_BACK;
         manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         videoCaptureProgress = (ProgressBar) findViewById(R.id.videoprogress);
+
+        undoDrawing = (TextView) findViewById(R.id.undo);
 
 
 
@@ -251,10 +277,102 @@ public class statusCamera extends AppCompatActivity  {
             }
         });
 
+        btnBrush.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked){
+
+
+                    undoDrawing.setVisibility(View.VISIBLE);
+                    drawView = true;
+                    colorSeekBar.setVisibility(View.VISIBLE);
+                    seekBar.setVisibility(View.VISIBLE);
+                    frameLayout.removeAllViews();
+                    frameLayout.addView(dv);
+                    dv.setDrawingCacheEnabled(true);
+
+                    undoDrawing.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+
+                            dv.onClickUndo();
+                            /*
+                            if (dv.paths.size()>0) {
+                                dv.paths.remove(dv.paths.size() - 1);
+                                dv.mCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                                for (Path p : dv.paths) {
+                                    Toast.makeText(getApplicationContext(),"hii",Toast.LENGTH_SHORT).show();
+                                    dv.mCanvas.drawPath(p, mPaint);
+                                }
+                                dv.invalidate();
+                            }
+
+                             */
+                        }
+
+
+                    });
+
+
+
+                    colorSeekBar.setOnColorChangeListener(new ColorSeekBar.OnColorChangeListener() {
+                        @Override
+                        public void onColorChangeListener(int i) {
+                            mPaint.setColor(i);
+                        }
+                    });
+
+                    seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                        @Override
+                        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                            String width = progress + "f";
+                            mPaint.setStrokeWidth(Float.parseFloat(width));
+                            //dv.strokes.add(Float.parseFloat(width));
+                        }
+
+                        @Override
+                        public void onStartTrackingTouch(SeekBar seekBar) {
+
+                        }
+
+                        @Override
+                        public void onStopTrackingTouch(SeekBar seekBar) {
+
+                        }
+                    });
+
+                }
+                else {
+
+                    drawView = false;
+
+                    undoDrawing.setVisibility(View.INVISIBLE);
+                   // Canvas canvas = textureView.lockCanvas();
+                   // Bitmap newV = dv.getDrawingCache();
+                   // Bitmap newB = Bitmap.createScaledBitmap(selectedBitmap,canvas.getWidth(),canvas.getHeight(),true);
+
+                   // Bitmap bmOverlay = Bitmap.createBitmap(newB.getWidth(), newB.getHeight(), newB.getConfig());
+
+                   // canvas.drawBitmap(bmp2, 0, 0, null);
+                   // canvas.drawBitmap(newB,0,0,null);
+                   // canvas.drawBitmap( newV, new Matrix(), null);
+                    //canvas.drawPath( dv.mPath,  mPaint);
+                    //canvas.drawPath( dv.circlePath,  dv.circlePaint);
+                   // textureView.unlockCanvasAndPost(canvas);
+                    colorSeekBar.setVisibility(View.INVISIBLE);
+                    seekBar.setVisibility(View.INVISIBLE);
+                    //frameLayout.removeView(dv);
+                }
+            }
+        });
+
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-                openCamera();
+                if(!isGalIntent){
+                    openCamera();
+                }
+
             }
 
             @Override
@@ -297,11 +415,14 @@ public class statusCamera extends AppCompatActivity  {
             }
         });
 
+
         textureView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
 
                 if (cameraDevice!=null){
+                    if (cameraCaptureSessions!=null){
+
 
 
                 final int actionMasked = motionEvent.getActionMasked();
@@ -391,12 +512,13 @@ public class statusCamera extends AppCompatActivity  {
 
 
 
+
                         return true;
                     }
                 }
 
                 }
-
+                }
 
                 return true;
             }
@@ -404,6 +526,17 @@ public class statusCamera extends AppCompatActivity  {
 
 
 
+    }
+
+    public  Bitmap getBitmapFromView(View view) {
+
+
+        Bitmap bmOverlay = Bitmap.createBitmap(selectedBitmap.getWidth(), selectedBitmap.getHeight(), selectedBitmap.getConfig());
+
+        Canvas canvas = new Canvas(bmOverlay);
+        Drawable bgDrawable =view.getBackground();
+        view.draw(canvas);
+        return bmOverlay;
     }
 
     private void toggleVideoIcons() {
@@ -467,9 +600,85 @@ public class statusCamera extends AppCompatActivity  {
        // galIntent.putExtra("IMAGES_LIMIT", 1);
        // galIntent.putExtra("VIDEOS_LIMIT", 1);
         ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(this);
-        startActivity(galIntent,options.toBundle());
-        //startActivity(galIntent);
+        //startActivity(galIntent,options.toBundle());
+        startActivityForResult(galIntent,21,options.toBundle());
 
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        super.onActivityResult(requestCode, resultCode, data);
+        // check if the request code is same as what is passed  here it is 2
+        if(requestCode==21)
+        {
+            String uri =data.getStringExtra("uri");
+           boolean mp4 = false;
+          String m = uri.substring(uri.length()-3 , uri.length());
+
+
+
+            if (uri!=null){
+                imageCaptured = true;
+                isGalIntent = true;
+                closePreviewSession();
+                closeCameraDevice();
+                hideCameraButtons();
+                btnRotate.setVisibility(View.INVISIBLE);
+                btnFlash.setVisibility(View.INVISIBLE);
+               // updatePreview();
+                if (cameraDevice == null){
+                    File imgFile = new  File(uri);
+
+                    Canvas canvas = textureView.lockCanvas();
+                    myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+                    selectedBitmap = Bitmap.createScaledBitmap(myBitmap,canvas.getWidth(),canvas.getHeight(),true);
+                    Bitmap newB = Bitmap.createScaledBitmap(myBitmap,canvas.getWidth(),canvas.getHeight(),true);
+
+                    canvas.drawBitmap(newB,0,0,null);
+                    textureView.unlockCanvasAndPost(canvas);
+                    dv = new DrawingView(statusCamera.this);
+                    btnBrush.setVisibility(View.VISIBLE);
+                    mPaint = new Paint();
+                    mPaint.setAntiAlias(true);
+                    mPaint.setDither(true);
+                    mPaint.setColor(Color.BLACK);
+                    mPaint.setStyle(Paint.Style.STROKE);
+                    mPaint.setStrokeJoin(Paint.Join.ROUND);
+                    mPaint.setStrokeCap(Paint.Cap.ROUND);
+                    mPaint.setStrokeWidth(12);
+
+                }
+                Toast.makeText(getApplicationContext(),"done",Toast.LENGTH_LONG).show();
+            }
+
+
+            //imageCaptured = true;
+            //closePreviewSession();
+            //closeCameraDevice();
+            //updatePreview();
+            /*
+            String uri =data.getStringExtra("uri");
+            File imgFile = new  File(uri);
+
+
+
+
+            Canvas canvas = textureView.lockCanvas();
+            Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+            Bitmap newB = Bitmap.createScaledBitmap(myBitmap,canvas.getWidth(),canvas.getHeight(),true);
+
+            canvas.drawBitmap(newB,0,0,null);
+            textureView.unlockCanvasAndPost(canvas);
+
+
+
+             */
+
+
+        }
     }
 
     public void switchFlash() {
@@ -551,6 +760,7 @@ public class statusCamera extends AppCompatActivity  {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
                     Image image = null;
+
                     try {
                         image = reader.acquireLatestImage();
                         ByteBuffer buffer = image.getPlanes()[0].getBuffer();
@@ -590,6 +800,7 @@ public class statusCamera extends AppCompatActivity  {
                     captureRequestBuilder = captureBuilder;
                     imageCaptured = true;
                     Toast.makeText(getApplicationContext(), "Saved:" + file, Toast.LENGTH_SHORT).show();
+
                     updatePreview();
                 }
             };
@@ -734,7 +945,7 @@ public class statusCamera extends AppCompatActivity  {
 
             closeCameraDevice();
 
-            startVideoPreview();
+            startVideoPreview(mCurrentFile.getAbsolutePath());
         }
     }
 
@@ -746,7 +957,7 @@ public class statusCamera extends AppCompatActivity  {
     }
 
 
-    private void startVideoPreview() {
+    private void startVideoPreview(String path) {
 
        //
        // textureView.setSurfaceTextureListener(new S);
@@ -761,7 +972,7 @@ public class statusCamera extends AppCompatActivity  {
         //ArrayList<GalleryVideo> image = new GalleryPicker(getApplicationContext()).getVideos();
 
             mMediaPlayer= new MediaPlayer();
-            mMediaPlayer.setDataSource(mCurrentFile.getAbsolutePath());
+            mMediaPlayer.setDataSource(path);
             mMediaPlayer.setSurface(surface);
             mMediaPlayer.prepare();
             mMediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
@@ -838,6 +1049,7 @@ public class statusCamera extends AppCompatActivity  {
         try{
             cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(),null,mBackgroundHandler);
             if (imageCaptured){
+                closeCameraDevice();
                hideCameraButtons();
                btnCapture.setEnabled(true);
             }
@@ -896,9 +1108,12 @@ public class statusCamera extends AppCompatActivity  {
         try{
            // cameraId = manager.getCameraIdList()[0];
             frontCamAvailable = manager.getCameraIdList()[1];
-            if (frontCamAvailable!=null){
-                btnRotate.setVisibility(View.VISIBLE);
+            if (!isGalIntent){
+                if (frontCamAvailable!=null){
+                    btnRotate.setVisibility(View.VISIBLE);
+                }
             }
+
 
              characteristics = manager.getCameraCharacteristics(cameraId);
             Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
@@ -938,7 +1153,9 @@ public class statusCamera extends AppCompatActivity  {
 
     private void setupFlashButton() {
         if (cameraId.equals(CAMERA_BACK) && isFlashSupported) {
-            btnFlash.setVisibility(View.VISIBLE);
+            if (!isGalIntent) {
+                btnFlash.setVisibility(View.VISIBLE);
+            }
 
             if (isTorchOn) {
                 btnFlash.setBackground(ContextCompat.getDrawable(getApplicationContext() , R.drawable.vector_flash_on));
@@ -954,7 +1171,10 @@ public class statusCamera extends AppCompatActivity  {
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
-            openCamera();
+            if (!isGalIntent){
+                openCamera();
+            }
+
 
         }
 
@@ -1010,11 +1230,24 @@ public class statusCamera extends AppCompatActivity  {
 
             videoCaptured = false;
             imageCaptured = false;
-            if (mMediaPlayer.isPlaying()){
-                mMediaPlayer.stop();
-                mMediaPlayer.release();
+            if (mMediaPlayer!=null){
+                if (mMediaPlayer.isPlaying()){
+                    mMediaPlayer.stop();
+                    mMediaPlayer.release();
+                }
             }
-            openCamera();
+            if (isGalIntent){
+                Canvas canvas = textureView.lockCanvas();
+                canvas.drawColor(Color.TRANSPARENT);
+                textureView.unlockCanvasAndPost(canvas);
+
+                Intent in = new Intent(statusCamera.this,CustomPicker.class);
+                ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(this);
+                startActivityForResult(in,21,options.toBundle());
+            }
+
+
+            reopenCamera();
 
         }
         else {
@@ -1063,5 +1296,152 @@ public class statusCamera extends AppCompatActivity  {
         }
     }
 
+
+    public class DrawingView extends View {
+
+        public int width;
+        public  int height;
+        private Bitmap  mBitmap;
+        private Canvas  mCanvas , Dcanvas;
+        private Path mPath;
+        private Paint mBitmapPaint;
+        Context context;
+        private ArrayList<Path> undonePaths = new ArrayList<Path>();
+        private ArrayList<Path> paths = new ArrayList<Path>();
+        ArrayList<Paint> paints = new ArrayList<Paint>();
+        private int lastStroke = -1;
+        private Paint circlePaint;
+        private Path circlePath;
+
+        public DrawingView(Context c ) {
+            super(c);
+            context=c;
+            //mBitmap = bp;
+            mPath = new Path();
+            mBitmapPaint = new Paint(Paint.DITHER_FLAG);
+            circlePaint = new Paint();
+            circlePath = new Path();
+            circlePaint.setAntiAlias(true);
+            circlePaint.setColor(Color.BLUE);
+            circlePaint.setStyle(Paint.Style.STROKE);
+            circlePaint.setStrokeJoin(Paint.Join.MITER);
+            circlePaint.setStrokeWidth(4f);
+        }
+
+        @Override
+        protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+            super.onSizeChanged(w, h, oldw, oldh);
+
+            mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+            mCanvas = new Canvas(mBitmap);
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+
+
+            canvas.drawBitmap( mBitmap, 0, 0, mBitmapPaint);
+
+            for (Path p : paths) {
+                canvas.drawPath(p, mPaint);
+            }
+            
+
+            canvas.drawPath( mPath,  mPaint);
+            canvas.drawPath( circlePath,  circlePaint);
+
+
+
+
+
+
+
+        }
+
+        private float mX, mY;
+        private static final float TOUCH_TOLERANCE = 4;
+
+        private void touch_start(float x, float y) {
+            mPath.reset();
+            mPath.moveTo(x, y);
+            mX = x;
+            mY = y;
+        }
+
+        private void touch_move(float x, float y) {
+            float dx = Math.abs(x - mX);
+            float dy = Math.abs(y - mY);
+            if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
+                mPath.quadTo(mX, mY, (x + mX)/2, (y + mY)/2);
+                mX = x;
+                mY = y;
+
+                circlePath.reset();
+                circlePath.addCircle(mX, mY, 30, Path.Direction.CW);
+            }
+        }
+
+        private void touch_up() {
+            mPath.lineTo(mX, mY);
+            circlePath.reset();
+            // commit the path to our offscreen
+            mCanvas.drawPath(mPath,  mPaint);
+            // kill this so we don't double draw
+            paths.add(mPath);
+            paints.add(mPaint);
+
+            mPath.reset();
+            mPath = new Path();
+
+        }
+
+        public void onClickUndo () {
+            if (paths.size()>0)
+            {
+
+                paths.remove(paths.size()-1);
+               mCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                /*
+                mCanvas.drawBitmap( mBitmap, 0, 0, mBitmapPaint);
+                mCanvas.drawPath(paths.get(paths.size()-1),mPaint);
+                for (int i =0 ; i<= paths.size()-1; i++){
+                    mCanvas.drawPath(paths.get(i),paints.get(i));
+                }
+
+                 */
+                invalidate();
+            }
+
+        }
+
+        @Override
+        public boolean onTouchEvent(MotionEvent event) {
+            if (!drawView){
+                return false;
+            }
+            else {
+                float x = event.getX();
+                float y = event.getY();
+
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        touch_start(x, y);
+                        invalidate();
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        touch_move(x, y);
+                        invalidate();
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        touch_up();
+                        invalidate();
+                        break;
+                }
+                return true;
+            }
+
+        }
+    }
 
 }

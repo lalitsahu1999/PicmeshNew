@@ -28,6 +28,16 @@
 
         </activity>
         <activity
+            android:name=".drawTextureTest"
+            android:theme="@style/Theme.AppCompat.NoActionBar">
+
+        </activity>
+        <activity
+            android:name=".drawTest"
+            android:theme="@style/Theme.AppCompat.NoActionBar">
+
+        </activity>
+        <activity
             android:name=".testRecorder"
             android:theme="@style/Theme.AppCompat.NoActionBar">
 

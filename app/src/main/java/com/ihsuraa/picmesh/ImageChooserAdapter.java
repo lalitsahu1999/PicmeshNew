@@ -2,6 +2,7 @@ package com.ihsuraa.picmesh;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.text.format.DateUtils;
 import android.util.DisplayMetrics;
@@ -25,6 +26,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static android.app.Activity.RESULT_OK;
 
 public class ImageChooserAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
@@ -63,7 +66,11 @@ public class ImageChooserAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
         @Override
         public void onClick(View view) {
-            Toast.makeText(context,mData.get(getAdapterPosition()).getDATA(),Toast.LENGTH_LONG).show();
+            Intent intent=new Intent();
+            intent.putExtra("uri",mData.get(getAdapterPosition()).getDATA());
+            ((Activity) context).setResult(21, intent);
+            ((Activity) context).finish();
+           // Toast.makeText(context,mData.get(getAdapterPosition()).getDATA(),Toast.LENGTH_LONG).show();
         }
     }
 
@@ -82,7 +89,11 @@ public class ImageChooserAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
         @Override
         public void onClick(View v) {
-            Toast.makeText(context,mData.get(getAdapterPosition()).getDATA(),Toast.LENGTH_LONG).show();
+            Intent intent=new Intent();
+            intent.putExtra("uri",mData.get(getAdapterPosition()).getDATA());
+            ((Activity) context).setResult(21, intent);
+            ((Activity) context).finish();
+           // Toast.makeText(context,mData.get(getAdapterPosition()).getDATA(),Toast.LENGTH_LONG).show();
         }
     }
 

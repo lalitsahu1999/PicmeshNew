@@ -60,6 +60,7 @@ dependencies {
     implementation 'com.github.tizisdeepan:gallerypicker:1.0.1'
     implementation 'com.klinkerapps:sliding-activity:1.5.2'
     implementation 'com.github.bumptech.glide:glide:4.11.0'
+    implementation 'com.divyanshu.colorseekbar:colorseekbar:1.0.2'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
 
 }

@@ -1,9 +1,9 @@
 <component name="libraryTable">
   <library name="Gradle: com.klinkerapps:sliding-activity:1.5.2@aar">
     <CLASSES>
-      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/8e6838e0440eba7bb55aff2d688302a6/jetified-sliding-activity-1.5.2/AndroidManifest.xml" />
-      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/8e6838e0440eba7bb55aff2d688302a6/jetified-sliding-activity-1.5.2/jars/classes.jar!/" />
-      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/8e6838e0440eba7bb55aff2d688302a6/jetified-sliding-activity-1.5.2/res" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/f41c25d615fde4829f141a44c8fb71d8/jetified-sliding-activity-1.5.2/AndroidManifest.xml" />
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/f41c25d615fde4829f141a44c8fb71d8/jetified-sliding-activity-1.5.2/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/f41c25d615fde4829f141a44c8fb71d8/jetified-sliding-activity-1.5.2/res" />
     </CLASSES>
     <JAVADOC>
       <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.klinkerapps/sliding-activity/1.5.2/ae8db92cdf0db901554250ab737e13142d7fcc83/sliding-activity-1.5.2-javadoc.jar!/" />
