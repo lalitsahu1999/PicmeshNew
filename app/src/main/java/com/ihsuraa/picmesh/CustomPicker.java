@@ -55,7 +55,7 @@ public class CustomPicker extends AppCompatActivity  {
 
     @Override
     public void onBackPressed() {
-        Intent intent = new Intent(CustomPicker.this,statusCamera.class);
+        Intent intent = new Intent(CustomPicker.this, statusCamera.class);
         startActivity(intent);
     }
 

@@ -37,6 +37,8 @@
             android:theme="@style/Theme.AppCompat.NoActionBar">
 
         </activity>
+        <activity android:name=".StickerPicker.StickerPicker"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
         <activity
             android:name=".testRecorder"
             android:theme="@style/Theme.AppCompat.NoActionBar">
@@ -86,6 +88,9 @@
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"
             android:screenOrientation="portrait"/>
 
+        <activity
+            android:name=".testSeekbar"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
         <activity
             android:name=".Home"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />

@@ -13,5 +13,11 @@
 
     </style>
 
+    <style name="draw_seekbar" parent="Widget.AppCompat.SeekBar">
+        <item name="android:progressBackgroundTint">#A6FFFFFF</item>
+        <item name="android:progressTint">#FFFFFF</item>
+        <item name="thumbColor">#03F1AE</item>
+        <item name="thumbElevation">5dp</item>
+    </style>
 
 </resources>

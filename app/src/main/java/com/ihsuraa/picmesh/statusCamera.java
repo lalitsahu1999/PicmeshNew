@@ -2,9 +2,7 @@ package com.ihsuraa.picmesh;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.ActivityOptions;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -13,7 +11,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
@@ -38,9 +35,6 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
-import android.net.Uri;
-import android.opengl.EGL14;
-import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -50,14 +44,13 @@ import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
-import android.view.GestureDetector;
-import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
@@ -72,18 +65,18 @@ import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.divyanshu.colorseekbar.ColorSeekBar;
-import com.picker.gallery.model.GalleryImage;
-import com.picker.gallery.model.GalleryVideo;
-import com.picker.gallery.model.interactor.GalleryPicker;
-import com.picker.gallery.view.PickerActivity;
+import com.google.android.material.snackbar.Snackbar;
+import com.ihsuraa.picmesh.StickerPicker.StickerPicker;
+import com.ihsuraa.picmesh.StickerPicker.StickerPickerAdapter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -99,21 +92,17 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
-
-import javax.microedition.khronos.egl.EGL10;
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.egl.EGLContext;
-import javax.microedition.khronos.egl.EGLDisplay;
-import javax.microedition.khronos.egl.EGLSurface;
 
 
 public class statusCamera extends AppCompatActivity  {
     TextureView textureView;
-
-    ImageButton btnCapture, btnRotate , btnFlash , imgGallery ;
+    Snackbar stickerSnackbar;
+    ImageButton btnCapture, btnRotate , btnFlash , imgGallery , btnSticker;
     ToggleButton btnBrush;
     FrameLayout frameLayout , drawLayout;
+    ImageView seekbarBall;
+    LinearLayout ballLayout;
+    public ArrayList<View> allViews;
     public static final String CAMERA_FRONT = "1";
     public static final String CAMERA_BACK = "0";
     private boolean isFlashSupported;
@@ -159,7 +148,7 @@ public class statusCamera extends AppCompatActivity  {
     SurfaceView surfaceView;
     private File file;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
-    private boolean mFlashSupported,mIsRecordingVideo ,isGalIntent = false;
+    private boolean mFlashSupported,mIsRecordingVideo ,isGalIntent = false , isStickerIntent = false;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
     CameraManager manager;
@@ -168,12 +157,17 @@ public class statusCamera extends AppCompatActivity  {
     Canvas canvas;
     ConstraintLayout constraintLayout;
     ProgressBar videoCaptureProgress;
-TextView undoDrawing;
+    TextView undoDrawing;
     DrawingView dv ;
     Bitmap myBitmap , selectedBitmap;
     private Paint mPaint;
     ColorSeekBar colorSeekBar;
     SeekBar seekBar;
+    TextView seekText;
+    float y1,y2;
+    static final int MIN_DISTANCE = 150;
+    private StickerPickerAdapter adapter;
+    private int[] images = { R.drawable.sticky1, R.drawable.sticky2, R.drawable.female, R.drawable.male };
 
     CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
@@ -213,9 +207,12 @@ TextView undoDrawing;
         btnFlash = (ImageButton) findViewById(R.id.flash);
         imgGallery = (ImageButton) findViewById(R.id.imgGallery);
         btnBrush = (ToggleButton) findViewById(R.id.brush);
+        btnSticker = (ImageButton) findViewById(R.id.sticker);
         frameLayout = (FrameLayout) findViewById(R.id.frame);
         colorSeekBar = (ColorSeekBar) findViewById(R.id.color_seek_bar) ;
         seekBar = (SeekBar) findViewById(R.id.seekBar_luminosite);
+        seekbarBall = (ImageView) findViewById(R.id.seekbar_ball);
+        ballLayout = (LinearLayout) findViewById(R.id.linear);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         cameraId = CAMERA_BACK;
         manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
@@ -283,19 +280,43 @@ TextView undoDrawing;
                 if (isChecked){
 
 
-                    undoDrawing.setVisibility(View.VISIBLE);
+                    dv = new DrawingView(statusCamera.this);
+                    frameLayout.addView(dv);
+                    allViews.add(dv);
+
                     drawView = true;
                     colorSeekBar.setVisibility(View.VISIBLE);
                     seekBar.setVisibility(View.VISIBLE);
-                    frameLayout.removeAllViews();
-                    frameLayout.addView(dv);
+                   // frameLayout.removeAllViews();
+
                     dv.setDrawingCacheEnabled(true);
 
                     undoDrawing.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
 
-                            dv.onClickUndo();
+
+
+                            if (allViews.size()>0){
+                                frameLayout.removeView(allViews.get(allViews.size()-1));
+                                allViews.remove(allViews.size()-1);
+                            }
+                            else {
+
+                                     frameLayout.removeAllViews();
+                                    dv = new DrawingView(statusCamera.this);
+                                    frameLayout.addView(dv);
+
+
+
+
+
+
+                             //  Toast.makeText(getApplicationContext(),String.valueOf(allViews.size()),Toast.LENGTH_SHORT).show();
+                            }
+
+
+                            //dv.onClickUndo();
                             /*
                             if (dv.paths.size()>0) {
                                 dv.paths.remove(dv.paths.size() - 1);
@@ -325,19 +346,26 @@ TextView undoDrawing;
                     seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                         @Override
                         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                            String width = progress + "f";
+                            String width = progress/2 + "f";
                             mPaint.setStrokeWidth(Float.parseFloat(width));
+                            int val = (progress * (seekBar.getWidth() - 2 * seekBar.getThumbOffset())) / seekBar.getMax();
+                            LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(progress/2,progress/2);
+                            if (!(progress >90)){
+                                seekbarBall.setX(seekBar.getX() + val + seekBar.getThumbOffset() / 2);
+                            }
+
+                            seekbarBall.setLayoutParams(parms);
                             //dv.strokes.add(Float.parseFloat(width));
                         }
 
                         @Override
                         public void onStartTrackingTouch(SeekBar seekBar) {
-
+                            ballLayout.setVisibility(View.VISIBLE);
                         }
 
                         @Override
                         public void onStopTrackingTouch(SeekBar seekBar) {
-
+                            ballLayout.setVisibility(View.GONE);
                         }
                     });
 
@@ -346,7 +374,7 @@ TextView undoDrawing;
 
                     drawView = false;
 
-                    undoDrawing.setVisibility(View.INVISIBLE);
+                    //undoDrawing.setVisibility(View.INVISIBLE);
                    // Canvas canvas = textureView.lockCanvas();
                    // Bitmap newV = dv.getDrawingCache();
                    // Bitmap newB = Bitmap.createScaledBitmap(selectedBitmap,canvas.getWidth(),canvas.getHeight(),true);
@@ -363,6 +391,65 @@ TextView undoDrawing;
                     seekBar.setVisibility(View.INVISIBLE);
                     //frameLayout.removeView(dv);
                 }
+            }
+        });
+
+        btnSticker.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent stickerIntent = new Intent(statusCamera.this, StickerPicker.class);
+                ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(statusCamera.this);
+               // startActivityForResult(stickerIntent,25,options.toBundle());
+                ViewGroup view = (ViewGroup) findViewById(android.R.id.content);
+
+
+                stickerSnackbar = Snackbar.make(view, "", Snackbar.LENGTH_INDEFINITE);
+                Snackbar.SnackbarLayout layout = (Snackbar.SnackbarLayout) stickerSnackbar.getView();
+                layout.setMinimumHeight(1200);
+                View snackView = getLayoutInflater().inflate(R.layout.activity_sticker_chooser, null);
+
+                RecyclerView recyclerView = (RecyclerView) snackView.findViewById(R.id.Sticker_chooser);
+                int numberOfColumns = 3;
+                adapter = new StickerPickerAdapter(getApplicationContext(), images , stickerSnackbar , frameLayout , allViews , undoDrawing);
+                final GridLayoutManager gridLayoutManager = new GridLayoutManager(getApplicationContext(),numberOfColumns);
+                recyclerView.setLayoutManager(gridLayoutManager);
+                recyclerView.setAdapter(adapter);
+                layout.setPadding(0,0,0,0);
+                layout.addView(snackView, 0);
+
+                layout.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View v, MotionEvent event) {
+                        switch(event.getAction())
+                        {
+                            case MotionEvent.ACTION_DOWN:
+                                y1 = event.getY();
+                                break;
+                            case MotionEvent.ACTION_UP:
+                                y2 = event.getY();
+                                float deltaX = y2 - y1;
+                                if (Math.abs(deltaX) > MIN_DISTANCE)
+                                {
+                                    if (y2 > y1)
+                                    {
+                                        Toast.makeText(getApplicationContext(), "bottom to up swipe ", Toast.LENGTH_SHORT).show ();
+
+                                        stickerSnackbar.dismiss();
+                                    }
+
+                                }
+                                else
+                                {
+                                    Toast.makeText(getApplicationContext(), "Tap or Else", Toast.LENGTH_SHORT).show ();
+                                }
+                                break;
+                        }
+
+                        return true;
+                    }
+                });
+                stickerSnackbar.show();
+
             }
         });
 
@@ -610,6 +697,9 @@ TextView undoDrawing;
     {
         super.onActivityResult(requestCode, resultCode, data);
         // check if the request code is same as what is passed  here it is 2
+        closePreviewSession();
+        closeCameraDevice();
+        hideCameraButtons();
         if(requestCode==21)
         {
             String uri =data.getStringExtra("uri");
@@ -621,9 +711,7 @@ TextView undoDrawing;
             if (uri!=null){
                 imageCaptured = true;
                 isGalIntent = true;
-                closePreviewSession();
-                closeCameraDevice();
-                hideCameraButtons();
+
                 btnRotate.setVisibility(View.INVISIBLE);
                 btnFlash.setVisibility(View.INVISIBLE);
                // updatePreview();
@@ -638,17 +726,21 @@ TextView undoDrawing;
 
                     canvas.drawBitmap(newB,0,0,null);
                     textureView.unlockCanvasAndPost(canvas);
-                    dv = new DrawingView(statusCamera.this);
+                   allViews = new ArrayList<View>();
                     btnBrush.setVisibility(View.VISIBLE);
+                    seekBar.setProgress(5);
+
+
+                    btnSticker.setVisibility(View.VISIBLE);
                     mPaint = new Paint();
                     mPaint.setAntiAlias(true);
                     mPaint.setDither(true);
-                    mPaint.setColor(Color.BLACK);
+                    
                     mPaint.setStyle(Paint.Style.STROKE);
                     mPaint.setStrokeJoin(Paint.Join.ROUND);
                     mPaint.setStrokeCap(Paint.Cap.ROUND);
                     mPaint.setStrokeWidth(12);
-
+                    mPaint.setColor(colorSeekBar.getColor());
                 }
                 Toast.makeText(getApplicationContext(),"done",Toast.LENGTH_LONG).show();
             }
@@ -678,6 +770,11 @@ TextView undoDrawing;
              */
 
 
+        }
+
+        if(requestCode==25){
+            isStickerIntent = true;
+            Toast.makeText(getApplicationContext(),"success",Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -1240,6 +1337,9 @@ TextView undoDrawing;
                 Canvas canvas = textureView.lockCanvas();
                 canvas.drawColor(Color.TRANSPARENT);
                 textureView.unlockCanvasAndPost(canvas);
+                if (btnSticker.getVisibility() == View.VISIBLE){
+                    btnSticker.setVisibility(View.INVISIBLE);
+                }
 
                 Intent in = new Intent(statusCamera.this,CustomPicker.class);
                 ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(this);
@@ -1301,7 +1401,7 @@ TextView undoDrawing;
 
         public int width;
         public  int height;
-        private Bitmap  mBitmap;
+        private Bitmap  mBitmap, mBitmapBackup;
         private Canvas  mCanvas , Dcanvas;
         private Path mPath;
         private Paint mBitmapPaint;
@@ -1334,6 +1434,7 @@ TextView undoDrawing;
 
             mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
             mCanvas = new Canvas(mBitmap);
+
         }
 
         @Override
@@ -1341,15 +1442,8 @@ TextView undoDrawing;
             super.onDraw(canvas);
 
 
-            canvas.drawBitmap( mBitmap, 0, 0, mBitmapPaint);
-
-            for (Path p : paths) {
-                canvas.drawPath(p, mPaint);
-            }
-            
-
-            canvas.drawPath( mPath,  mPaint);
-            canvas.drawPath( circlePath,  circlePaint);
+             canvas.drawBitmap( mBitmap, 0, 0, mBitmapPaint);
+             canvas.drawPath( mPath,  mPaint);
 
 
 
@@ -1363,6 +1457,7 @@ TextView undoDrawing;
         private static final float TOUCH_TOLERANCE = 4;
 
         private void touch_start(float x, float y) {
+
             mPath.reset();
             mPath.moveTo(x, y);
             mX = x;
@@ -1394,14 +1489,19 @@ TextView undoDrawing;
             mPath.reset();
             mPath = new Path();
 
+           // frameLayout.removeView(dv);
+            undoDrawing.setVisibility(View.VISIBLE);
+            DrawingView test = new DrawingView(context);
+            frameLayout.addView(test);
+            allViews.add(test);
+
         }
 
         public void onClickUndo () {
             if (paths.size()>0)
             {
 
-                paths.remove(paths.size()-1);
-               mCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+
                 /*
                 mCanvas.drawBitmap( mBitmap, 0, 0, mBitmapPaint);
                 mCanvas.drawPath(paths.get(paths.size()-1),mPaint);
@@ -1443,5 +1543,7 @@ TextView undoDrawing;
 
         }
     }
+
+
 
 }
