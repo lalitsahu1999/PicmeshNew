@@ -33,8 +33,8 @@
 
         </activity>
         <activity
-            android:name=".drawTest"
-            android:theme="@style/Theme.AppCompat.NoActionBar">
+            android:name=".test"
+            android:theme="@style/MyMaterialTheme">
 
         </activity>
         <activity android:name=".StickerPicker.StickerPicker"
@@ -45,18 +45,6 @@
 
         </activity>
 
-        <activity
-            android:name=".CustomPicker"
-            android:theme="@style/Theme.AppCompat.NoActionBar"
-           >
-
-        </activity>
-
-        <activity
-            android:name=".CustomChooser"
-            android:theme="@style/Theme.AppCompat.NoActionBar">
-
-        </activity>
 
         <activity
             android:name=".SplashScreen"
@@ -85,12 +73,13 @@
         <activity android:name=".MainActivity"></activity>
         <activity
             android:name=".statusCamera"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:theme="@style/MyMaterialTheme"
             android:screenOrientation="portrait"/>
 
         <activity
-            android:name=".testSeekbar"
+            android:name=".galleryChooser"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
         <activity
             android:name=".Home"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />

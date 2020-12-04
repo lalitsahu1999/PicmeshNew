@@ -53,6 +53,8 @@ public class SplashScreen extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if(snapshot.exists()){
+
+
                     startActivity(new Intent(SplashScreen.this, Home.class));
                 }
                 else {

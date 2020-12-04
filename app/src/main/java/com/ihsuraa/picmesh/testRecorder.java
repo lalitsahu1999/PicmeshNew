@@ -27,7 +27,7 @@ public class testRecorder extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.test);
-        textureView = (TextureView) findViewById(R.id.textureView2);
+        //textureView = (TextureView) findViewById(R.id.textureView2);
         image = new GalleryPicker(getApplicationContext()).getVideos();
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override

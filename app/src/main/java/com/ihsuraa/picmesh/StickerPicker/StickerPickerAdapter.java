@@ -124,28 +124,6 @@ public class StickerPickerAdapter extends RecyclerView.Adapter<RecyclerView.View
                 public boolean onTouch(View v, MotionEvent event) {
 
 
-                    /*
-                    switch (event.getAction()){
-                        case MotionEvent.ACTION_DOWN:
-                            x = updatedParams.leftMargin;
-                            y = updatedParams.topMargin;
-
-                            touchedX = event.getRawX();
-                            touchedY = event.getRawY();
-
-                            break;
-
-                        case MotionEvent.ACTION_MOVE:
-
-                            updatedParams.leftMargin = (int) (x + (event.getRawX() - touchedX));
-                            updatedParams.topMargin = (int) (y + (event.getRawY() - touchedY));
-                            drawingView.updateViewLayout(v,updatedParams);
-
-                        default:
-                            break;
-                    }
-
-                     */
 
                     switch (event.getAction() & MotionEvent.ACTION_MASK) {
                         case MotionEvent.ACTION_DOWN:

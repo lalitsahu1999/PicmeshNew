@@ -38,7 +38,7 @@ public class drawTextureTest extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.test);
-        textureView = (TextureView) findViewById(R.id.textureView2);
+       // textureView = (TextureView) findViewById(R.id.textureView2);
         image = new GalleryPicker(getApplicationContext()).getImages();
         dv = new DrawingView(drawTextureTest.this);
         //setContentView(dv);

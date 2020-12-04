@@ -18,7 +18,7 @@
                                 <PersistentState>
                                   <option name="values">
                                     <map>
-                                      <entry key="url" value="jar:file:/C:/Program%20Files/Android/Android%20Studio/plugins/android/lib/android.jar!/images/material/icons/materialicons/brightness_1/baseline_brightness_1_24.xml" />
+                                      <entry key="url" value="jar:file:/C:/Program%20Files/Android/Android%20Studio/plugins/android/lib/android.jar!/images/material/icons/materialicons/transform/baseline_transform_24.xml" />
                                     </map>
                                   </option>
                                 </PersistentState>
@@ -28,8 +28,8 @@
                         </option>
                         <option name="values">
                           <map>
-                            <entry key="color" value="ffffff" />
-                            <entry key="outputName" value="vector_ball" />
+                            <entry key="color" value="f7f6ff" />
+                            <entry key="outputName" value="vector_crop_video" />
                             <entry key="sourceFile" value="C:\Users\Lalit Sahu\Downloads\gallery-photo-svgrepo-com.svg" />
                           </map>
                         </option>
